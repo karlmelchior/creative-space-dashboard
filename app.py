@@ -1,0 +1,684 @@
+"""
+Creative Space Dashboard Backend API
+Forbinder til Snowflake og leverer data til Retool dashboard
+"""
+
+from flask import Flask, jsonify, request, send_file
+from flask_cors import CORS
+import snowflake.connector
+from datetime import datetime, timedelta
+import os
+import csv
+import io
+from functools import wraps
+
+app = Flask(__name__)
+CORS(app)  # Tillad Retool at kalde API'en
+
+# Snowflake forbindelse
+SNOWFLAKE_CONFIG = {
+    'user': os.environ.get('SNOWFLAKE_USER', 'Karl_admin'),
+    'password': os.environ.get('SNOWFLAKE_PASSWORD', 'CSKode2022'),
+    'account': 'qp38588.west-europe.azure',
+    'warehouse': 'powerbi_wh',
+}
+
+def get_snowflake_connection():
+    """Opret Snowflake forbindelse"""
+    return snowflake.connector.connect(**SNOWFLAKE_CONFIG)
+
+def query_snowflake(query, params=None):
+    """Udfør query og returner som liste af dicts"""
+    conn = get_snowflake_connection()
+    try:
+        cursor = conn.cursor()
+        if params:
+            cursor.execute(query, params)
+        else:
+            cursor.execute(query)
+        
+        columns = [col[0] for col in cursor.description]
+        results = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        return results
+    finally:
+        conn.close()
+
+# ==================== HEALTH CHECK ====================
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Check om API og database forbindelse virker"""
+    try:
+        conn = get_snowflake_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT CURRENT_TIMESTAMP()")
+        result = cursor.fetchone()
+        conn.close()
+        return jsonify({
+            'status': 'healthy',
+            'database': 'connected',
+            'timestamp': str(result[0])
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+# ==================== PAX (GÆSTER) ====================
+
+@app.route('/api/pax/by-department', methods=['GET'])
+def get_pax_by_department():
+    """
+    Hent PAX per afdeling med benchmark sammenligning
+    Parameters: start_date, end_date, benchmark_start, benchmark_end
+    """
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    benchmark_start = request.args.get('benchmark_start')
+    benchmark_end = request.args.get('benchmark_end')
+    
+    try:
+        # Current period
+        query_current = """
+        SELECT 
+            r.NAME as DEPARTMENT,
+            COUNT(b.ID) as BOOKING_COUNT,
+            SUM(b.RESTAURANTBOOKING_B_PERSONS) as TOTAL_PAX
+        FROM DINNERBOOKING.PYTHON_IMPORT.BOOKINGS b
+        LEFT JOIN DINNERBOOKING.PYTHON_IMPORT.RESTAURANTS r 
+            ON b.RESTAURANTID = r.ID
+        WHERE DATE(b.RESTAURANTBOOKING_B_DATE_TIME) >= '{}'
+          AND DATE(b.RESTAURANTBOOKING_B_DATE_TIME) <= '{}'
+        GROUP BY r.NAME
+        ORDER BY TOTAL_PAX DESC
+        """.format(start_date, end_date)
+        
+        # Benchmark period
+        query_benchmark = """
+        SELECT 
+            r.NAME as DEPARTMENT,
+            COUNT(b.ID) as BOOKING_COUNT,
+            SUM(b.RESTAURANTBOOKING_B_PERSONS) as TOTAL_PAX
+        FROM DINNERBOOKING.PYTHON_IMPORT.BOOKINGS b
+        LEFT JOIN DINNERBOOKING.PYTHON_IMPORT.RESTAURANTS r 
+            ON b.RESTAURANTID = r.ID
+        WHERE DATE(b.RESTAURANTBOOKING_B_DATE_TIME) >= '{}'
+          AND DATE(b.RESTAURANTBOOKING_B_DATE_TIME) <= '{}'
+        GROUP BY r.NAME
+        ORDER BY TOTAL_PAX DESC
+        """.format(benchmark_start, benchmark_end)
+        
+        current = query_snowflake(query_current)
+        benchmark = query_snowflake(query_benchmark)
+        
+        # Merge current and benchmark
+        result = []
+        benchmark_dict = {item['DEPARTMENT']: item for item in benchmark}
+        
+        for dept in current:
+            dept_name = dept['DEPARTMENT']
+            benchmark_data = benchmark_dict.get(dept_name, {})
+            benchmark_pax = benchmark_data.get('TOTAL_PAX', 0) or 0
+            current_pax = dept['TOTAL_PAX'] or 0
+            
+            change_percent = 0
+            if benchmark_pax > 0:
+                change_percent = ((current_pax - benchmark_pax) / benchmark_pax) * 100
+            
+            result.append({
+                'department': dept_name,
+                'current_pax': current_pax,
+                'benchmark_pax': benchmark_pax,
+                'change_percent': round(change_percent, 2)
+            })
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pax/summary', methods=['GET'])
+def get_pax_summary():
+    """
+    Hent samlet PAX summary med benchmark
+    Parameters: start_date, end_date, benchmark_start, benchmark_end
+    """
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    benchmark_start = request.args.get('benchmark_start')
+    benchmark_end = request.args.get('benchmark_end')
+    
+    try:
+        query_template = """
+        SELECT 
+            SUM(RESTAURANTBOOKING_B_PERSONS) as TOTAL_PAX,
+            COUNT(*) as TOTAL_BOOKINGS
+        FROM DINNERBOOKING.PYTHON_IMPORT.BOOKINGS
+        WHERE DATE(RESTAURANTBOOKING_B_DATE_TIME) >= '{}'
+          AND DATE(RESTAURANTBOOKING_B_DATE_TIME) <= '{}'
+        """
+        
+        current = query_snowflake(query_template.format(start_date, end_date))[0]
+        benchmark = query_snowflake(query_template.format(benchmark_start, benchmark_end))[0]
+        
+        current_pax = current['TOTAL_PAX'] or 0
+        benchmark_pax = benchmark['TOTAL_PAX'] or 0
+        
+        change_percent = 0
+        if benchmark_pax > 0:
+            change_percent = ((current_pax - benchmark_pax) / benchmark_pax) * 100
+        
+        return jsonify({
+            'current_pax': current_pax,
+            'benchmark_pax': benchmark_pax,
+            'change_percent': round(change_percent, 2),
+            'current_bookings': current['TOTAL_BOOKINGS'],
+            'benchmark_bookings': benchmark['TOTAL_BOOKINGS']
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== BELÆGNINGSGRAD (OCCUPANCY) ====================
+
+@app.route('/api/occupancy/by-department', methods=['GET'])
+def get_occupancy_by_department():
+    """
+    Hent belægningsgrad per afdeling med benchmark
+    Parameters: start_date, end_date, benchmark_start, benchmark_end
+    """
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    benchmark_start = request.args.get('benchmark_start')
+    benchmark_end = request.args.get('benchmark_end')
+    
+    try:
+        # Simplified occupancy calculation
+        query_template = """
+        SELECT 
+            r.NAME as DEPARTMENT,
+            COUNT(*) as TOTAL_BOOKINGS,
+            SUM(CASE WHEN b.RESTAURANTBOOKING_B_STATUS = 'Confirmed' THEN 1 ELSE 0 END) as CONFIRMED_BOOKINGS,
+            (SUM(CASE WHEN b.RESTAURANTBOOKING_B_STATUS = 'Confirmed' THEN 1 ELSE 0 END) * 100.0 / COUNT(*)) as OCCUPANCY_RATE
+        FROM DINNERBOOKING.PYTHON_IMPORT.BOOKINGS b
+        LEFT JOIN DINNERBOOKING.PYTHON_IMPORT.RESTAURANTS r 
+            ON b.RESTAURANTID = r.ID
+        WHERE DATE(b.RESTAURANTBOOKING_B_DATE_TIME) >= '{}'
+          AND DATE(b.RESTAURANTBOOKING_B_DATE_TIME) <= '{}'
+        GROUP BY r.NAME
+        ORDER BY OCCUPANCY_RATE DESC
+        """
+        
+        current = query_snowflake(query_template.format(start_date, end_date))
+        benchmark = query_snowflake(query_template.format(benchmark_start, benchmark_end))
+        
+        # Merge results
+        result = []
+        benchmark_dict = {item['DEPARTMENT']: item for item in benchmark}
+        
+        for dept in current:
+            dept_name = dept['DEPARTMENT']
+            benchmark_data = benchmark_dict.get(dept_name, {})
+            
+            current_rate = dept['OCCUPANCY_RATE'] or 0
+            benchmark_rate = benchmark_data.get('OCCUPANCY_RATE', 0) or 0
+            
+            result.append({
+                'department': dept_name,
+                'current_rate': round(current_rate, 2),
+                'benchmark_rate': round(benchmark_rate, 2),
+                'change_points': round(current_rate - benchmark_rate, 2)
+            })
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/occupancy/by-category', methods=['GET'])
+def get_occupancy_by_category():
+    """
+    Hent belægningsgrad per tidskategori og ugedag
+    Parameters: start_date, end_date
+    """
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    try:
+        query = """
+        SELECT 
+            CASE 
+                WHEN HOUR(b.RESTAURANTBOOKING_B_DATE_TIME) BETWEEN 8 AND 11 THEN 'Formiddag'
+                WHEN HOUR(b.RESTAURANTBOOKING_B_DATE_TIME) BETWEEN 12 AND 14 THEN 'Tidlig eftermiddag'
+                WHEN HOUR(b.RESTAURANTBOOKING_B_DATE_TIME) BETWEEN 15 AND 17 THEN 'Eftermiddag'
+                ELSE 'Aften'
+            END as KATEGORI,
+            DAYNAME(b.RESTAURANTBOOKING_B_DATE_TIME) as WEEKDAY,
+            (SUM(CASE WHEN b.RESTAURANTBOOKING_B_STATUS = 'Confirmed' THEN 1 ELSE 0 END) * 100.0 / COUNT(*)) as OCCUPANCY_RATE
+        FROM DINNERBOOKING.PYTHON_IMPORT.BOOKINGS b
+        WHERE DATE(b.RESTAURANTBOOKING_B_DATE_TIME) >= '{}'
+          AND DATE(b.RESTAURANTBOOKING_B_DATE_TIME) <= '{}'
+        GROUP BY KATEGORI, WEEKDAY
+        ORDER BY 
+            CASE KATEGORI
+                WHEN 'Formiddag' THEN 1
+                WHEN 'Tidlig eftermiddag' THEN 2
+                WHEN 'Eftermiddag' THEN 3
+                WHEN 'Aften' THEN 4
+            END,
+            CASE WEEKDAY
+                WHEN 'Mon' THEN 1
+                WHEN 'Tue' THEN 2
+                WHEN 'Wed' THEN 3
+                WHEN 'Thu' THEN 4
+                WHEN 'Fri' THEN 5
+                WHEN 'Sat' THEN 6
+                WHEN 'Sun' THEN 7
+            END
+        """.format(start_date, end_date)
+        
+        results = query_snowflake(query)
+        
+        # Format for heatmap
+        formatted = []
+        for row in results:
+            formatted.append({
+                'category': row['KATEGORI'],
+                'weekday': row['WEEKDAY'],
+                'occupancy_rate': round(row['OCCUPANCY_RATE'], 1)
+            })
+        
+        return jsonify(formatted)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== OMSÆTNING (REVENUE) ====================
+
+@app.route('/api/revenue/by-department', methods=['GET'])
+def get_revenue_by_department():
+    """
+    Hent omsætning ex moms per afdeling
+    Parameters: start_date, end_date, benchmark_start, benchmark_end
+    
+    Note: This needs to be adjusted based on where your revenue data is stored
+    Currently placeholder - needs real revenue table mapping
+    """
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    benchmark_start = request.args.get('benchmark_start')
+    benchmark_end = request.args.get('benchmark_end')
+    
+    try:
+        # PLACEHOLDER - adjust to your actual revenue data location
+        # This query needs to be customized based on your actual schema
+        query_template = """
+        SELECT 
+            'Frederiksberg' as DEPARTMENT,
+            500000 as REVENUE_EXCL_VAT
+        UNION ALL
+        SELECT 'Lyngby', 450000
+        UNION ALL
+        SELECT 'Odense', 400000
+        UNION ALL
+        SELECT 'Vejle', 350000
+        UNION ALL
+        SELECT 'Østerbro', 480000
+        UNION ALL
+        SELECT 'Aarhus', 420000
+        """
+        
+        # You'll need to replace this with actual revenue query
+        # Example structure (adjust table names):
+        # SELECT 
+        #     department_name,
+        #     SUM(amount_excl_vat) as REVENUE_EXCL_VAT
+        # FROM your_sales_table
+        # WHERE date >= '{}' AND date <= '{}'
+        # GROUP BY department_name
+        
+        results = query_snowflake(query_template)
+        
+        return jsonify({
+            'note': 'PLACEHOLDER DATA - Needs real revenue table mapping',
+            'data': results
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== LØNUDGIFTER (LABOR COSTS) ====================
+
+@app.route('/api/labor/by-department', methods=['GET'])
+def get_labor_by_department():
+    """
+    Hent lønudgifter per afdeling med benchmark
+    Parameters: start_date, end_date, benchmark_start, benchmark_end
+    """
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    benchmark_start = request.args.get('benchmark_start')
+    benchmark_end = request.args.get('benchmark_end')
+    
+    try:
+        query_template = """
+        SELECT 
+            d.NAME as DEPARTMENT,
+            SUM(DATEDIFF(hour, s.STARTDATETIME, s.ENDDATETIME) * COALESCE(p.WAGE_RATE, 0)) as TOTAL_LABOR_COST,
+            SUM(DATEDIFF(hour, s.STARTDATETIME, s.ENDDATETIME)) as TOTAL_HOURS,
+            COUNT(DISTINCT s.EMPLOYEEID) as EMPLOYEE_COUNT
+        FROM PLANDAY.PYTHON_IMPORT.SHIFTS s
+        LEFT JOIN PLANDAY.PYTHON_IMPORT.DEPARTMENTS d ON s.DEPARTMENTID = d.ID
+        LEFT JOIN PLANDAY.PYTHON_IMPORT.PAYROLL p ON s.ID = p.ID
+        WHERE DATE(s.STARTDATETIME) >= '{}'
+          AND DATE(s.STARTDATETIME) <= '{}'
+        GROUP BY d.NAME
+        ORDER BY TOTAL_LABOR_COST DESC
+        """
+        
+        current = query_snowflake(query_template.format(start_date, end_date))
+        benchmark = query_snowflake(query_template.format(benchmark_start, benchmark_end))
+        
+        # Merge results
+        result = []
+        benchmark_dict = {item['DEPARTMENT']: item for item in benchmark if item['DEPARTMENT']}
+        
+        for dept in current:
+            if not dept['DEPARTMENT']:
+                continue
+                
+            dept_name = dept['DEPARTMENT']
+            benchmark_data = benchmark_dict.get(dept_name, {})
+            
+            current_cost = dept['TOTAL_LABOR_COST'] or 0
+            benchmark_cost = benchmark_data.get('TOTAL_LABOR_COST', 0) or 0
+            
+            change_percent = 0
+            if benchmark_cost > 0:
+                change_percent = ((current_cost - benchmark_cost) / benchmark_cost) * 100
+            
+            result.append({
+                'department': dept_name,
+                'current_cost': round(current_cost, 2),
+                'benchmark_cost': round(benchmark_cost, 2),
+                'current_hours': dept['TOTAL_HOURS'] or 0,
+                'employee_count': dept['EMPLOYEE_COUNT'] or 0,
+                'change_percent': round(change_percent, 2)
+            })
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/labor/summary', methods=['GET'])
+def get_labor_summary():
+    """
+    Hent samlet lønudgifter summary
+    Parameters: start_date, end_date, benchmark_start, benchmark_end
+    """
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    benchmark_start = request.args.get('benchmark_start')
+    benchmark_end = request.args.get('benchmark_end')
+    
+    try:
+        query_template = """
+        SELECT 
+            SUM(DATEDIFF(hour, s.STARTDATETIME, s.ENDDATETIME) * COALESCE(p.WAGE_RATE, 0)) as TOTAL_COST,
+            SUM(DATEDIFF(hour, s.STARTDATETIME, s.ENDDATETIME)) as TOTAL_HOURS
+        FROM PLANDAY.PYTHON_IMPORT.SHIFTS s
+        LEFT JOIN PLANDAY.PYTHON_IMPORT.PAYROLL p ON s.ID = p.ID
+        WHERE DATE(s.STARTDATETIME) >= '{}'
+          AND DATE(s.STARTDATETIME) <= '{}'
+        """
+        
+        current = query_snowflake(query_template.format(start_date, end_date))[0]
+        benchmark = query_snowflake(query_template.format(benchmark_start, benchmark_end))[0]
+        
+        current_cost = current['TOTAL_COST'] or 0
+        benchmark_cost = benchmark['TOTAL_COST'] or 0
+        
+        change_percent = 0
+        if benchmark_cost > 0:
+            change_percent = ((current_cost - benchmark_cost) / benchmark_cost) * 100
+        
+        return jsonify({
+            'current_cost': round(current_cost, 2),
+            'benchmark_cost': round(benchmark_cost, 2),
+            'current_hours': current['TOTAL_HOURS'] or 0,
+            'benchmark_hours': benchmark['TOTAL_HOURS'] or 0,
+            'change_percent': round(change_percent, 2)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== OMSÆTNING VS PAX ====================
+
+@app.route('/api/metrics/revenue-vs-pax', methods=['GET'])
+def get_revenue_vs_pax():
+    """
+    Hent omsætning vs PAX per afdeling
+    Parameters: start_date, end_date
+    """
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    try:
+        # Get PAX data
+        pax_query = """
+        SELECT 
+            r.NAME as DEPARTMENT,
+            SUM(b.RESTAURANTBOOKING_B_PERSONS) as TOTAL_PAX
+        FROM DINNERBOOKING.PYTHON_IMPORT.BOOKINGS b
+        LEFT JOIN DINNERBOOKING.PYTHON_IMPORT.RESTAURANTS r ON b.RESTAURANTID = r.ID
+        WHERE DATE(b.RESTAURANTBOOKING_B_DATE_TIME) >= '{}'
+          AND DATE(b.RESTAURANTBOOKING_B_DATE_TIME) <= '{}'
+        GROUP BY r.NAME
+        """.format(start_date, end_date)
+        
+        pax_data = query_snowflake(pax_query)
+        
+        # PLACEHOLDER for revenue - needs real revenue data
+        result = []
+        for dept in pax_data:
+            if dept['DEPARTMENT']:
+                result.append({
+                    'department': dept['DEPARTMENT'],
+                    'pax': dept['TOTAL_PAX'] or 0,
+                    'revenue': 0,  # PLACEHOLDER - needs real revenue data
+                    'revenue_per_pax': 0  # Will calculate when revenue is available
+                })
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== LØN VS OMSÆTNING ====================
+
+@app.route('/api/metrics/labor-vs-revenue', methods=['GET'])
+def get_labor_vs_revenue():
+    """
+    Hent løn vs omsætning ratio per afdeling
+    Parameters: start_date, end_date
+    """
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    try:
+        # Get labor costs
+        labor_query = """
+        SELECT 
+            d.NAME as DEPARTMENT,
+            SUM(DATEDIFF(hour, s.STARTDATETIME, s.ENDDATETIME) * COALESCE(p.WAGE_RATE, 0)) as LABOR_COST
+        FROM PLANDAY.PYTHON_IMPORT.SHIFTS s
+        LEFT JOIN PLANDAY.PYTHON_IMPORT.DEPARTMENTS d ON s.DEPARTMENTID = d.ID
+        LEFT JOIN PLANDAY.PYTHON_IMPORT.PAYROLL p ON s.ID = p.ID
+        WHERE DATE(s.STARTDATETIME) >= '{}'
+          AND DATE(s.STARTDATETIME) <= '{}'
+        GROUP BY d.NAME
+        """.format(start_date, end_date)
+        
+        labor_data = query_snowflake(labor_query)
+        
+        # PLACEHOLDER - needs real revenue data
+        result = []
+        for dept in labor_data:
+            if dept['DEPARTMENT']:
+                result.append({
+                    'department': dept['DEPARTMENT'],
+                    'labor_cost': round(dept['LABOR_COST'] or 0, 2),
+                    'revenue': 0,  # PLACEHOLDER
+                    'labor_percentage': 0  # Will calculate when revenue is available
+                })
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== LØN VS PAX ====================
+
+@app.route('/api/metrics/labor-vs-pax', methods=['GET'])
+def get_labor_vs_pax():
+    """
+    Hent løn vs PAX per afdeling
+    Parameters: start_date, end_date, benchmark_start, benchmark_end
+    """
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    benchmark_start = request.args.get('benchmark_start')
+    benchmark_end = request.args.get('benchmark_end')
+    
+    try:
+        # Combined query for labor and PAX
+        query_template = """
+        SELECT 
+            d.NAME as DEPARTMENT,
+            SUM(DATEDIFF(hour, s.STARTDATETIME, s.ENDDATETIME) * COALESCE(p.WAGE_RATE, 0)) as LABOR_COST,
+            (
+                SELECT SUM(b.RESTAURANTBOOKING_B_PERSONS)
+                FROM DINNERBOOKING.PYTHON_IMPORT.BOOKINGS b
+                LEFT JOIN DINNERBOOKING.PYTHON_IMPORT.RESTAURANTS r ON b.RESTAURANTID = r.ID
+                WHERE r.NAME = d.NAME
+                  AND DATE(b.RESTAURANTBOOKING_B_DATE_TIME) >= '{}'
+                  AND DATE(b.RESTAURANTBOOKING_B_DATE_TIME) <= '{}'
+            ) as TOTAL_PAX
+        FROM PLANDAY.PYTHON_IMPORT.SHIFTS s
+        LEFT JOIN PLANDAY.PYTHON_IMPORT.DEPARTMENTS d ON s.DEPARTMENTID = d.ID
+        LEFT JOIN PLANDAY.PYTHON_IMPORT.PAYROLL p ON s.ID = p.ID
+        WHERE DATE(s.STARTDATETIME) >= '{}'
+          AND DATE(s.STARTDATETIME) <= '{}'
+        GROUP BY d.NAME
+        """
+        
+        current = query_snowflake(query_template.format(
+            start_date, end_date, start_date, end_date
+        ))
+        benchmark = query_snowflake(query_template.format(
+            benchmark_start, benchmark_end, benchmark_start, benchmark_end
+        ))
+        
+        # Merge and calculate
+        result = []
+        benchmark_dict = {item['DEPARTMENT']: item for item in benchmark if item['DEPARTMENT']}
+        
+        for dept in current:
+            if not dept['DEPARTMENT']:
+                continue
+                
+            dept_name = dept['DEPARTMENT']
+            labor_cost = dept['LABOR_COST'] or 0
+            pax = dept['TOTAL_PAX'] or 0
+            
+            labor_per_pax = 0
+            if pax > 0:
+                labor_per_pax = labor_cost / pax
+            
+            benchmark_data = benchmark_dict.get(dept_name, {})
+            benchmark_labor = benchmark_data.get('LABOR_COST', 0) or 0
+            benchmark_pax = benchmark_data.get('TOTAL_PAX', 0) or 0
+            benchmark_per_pax = 0
+            if benchmark_pax > 0:
+                benchmark_per_pax = benchmark_labor / benchmark_pax
+            
+            change_percent = 0
+            if benchmark_per_pax > 0:
+                change_percent = ((labor_per_pax - benchmark_per_pax) / benchmark_per_pax) * 100
+            
+            result.append({
+                'department': dept_name,
+                'current_labor_per_pax': round(labor_per_pax, 2),
+                'benchmark_labor_per_pax': round(benchmark_per_pax, 2),
+                'change_percent': round(change_percent, 2)
+            })
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== EXPORT TIL CSV ====================
+
+@app.route('/api/export/csv', methods=['POST'])
+def export_to_csv():
+    """
+    Export data til CSV
+    Body: { "endpoint": "/api/pax/by-department", "params": {...} }
+    """
+    try:
+        data = request.get_json()
+        endpoint = data.get('endpoint')
+        params = data.get('params', {})
+        
+        # Call the specified endpoint internally
+        # This is a simplified version - you might want to make actual internal calls
+        
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Write headers and data based on endpoint
+        # This is a placeholder - customize based on actual data structure
+        writer.writerow(['Column1', 'Column2', 'Column3'])
+        writer.writerow(['Data1', 'Data2', 'Data3'])
+        
+        # Convert to bytes
+        output.seek(0)
+        return send_file(
+            io.BytesIO(output.getvalue().encode('utf-8')),
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name='export.csv'
+        )
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== DEPARTMENTS LIST ====================
+
+@app.route('/api/departments', methods=['GET'])
+def get_departments():
+    """Hent liste over alle afdelinger"""
+    try:
+        query = """
+        SELECT DISTINCT NAME as DEPARTMENT
+        FROM DINNERBOOKING.PYTHON_IMPORT.RESTAURANTS
+        WHERE NAME IS NOT NULL
+        ORDER BY NAME
+        """
+        
+        results = query_snowflake(query)
+        return jsonify([r['DEPARTMENT'] for r in results])
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== RUN SERVER ====================
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_ENV') != 'production'
+    app.run(host='0.0.0.0', port=port, debug=debug)
