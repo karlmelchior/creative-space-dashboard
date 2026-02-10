@@ -315,7 +315,7 @@ def get_revenue_by_department():
         SELECT 
             LOCATION as DEPARTMENT,
             SUM(TOTALEXCLVAT) as REVENUE_EXCL_VAT
-        FROM CREATIVESPACESALES.DBO.SQL_PLECTO
+        FROM AJOUR.PYTHON_IMPORT.PLECTO
         WHERE DATE("DATE") >= '{}'
           AND DATE("DATE") <= '{}'
           AND SALESTYPE <> 'PosSaleTotal'
@@ -329,7 +329,7 @@ def get_revenue_by_department():
         SELECT 
             LOCATION as DEPARTMENT,
             SUM(TOTALEXCLVAT) as REVENUE_EXCL_VAT
-        FROM CREATIVESPACESALES.DBO.SQL_PLECTO
+        FROM AJOUR.PYTHON_IMPORT.PLECTO
         WHERE DATE("DATE") >= '{}'
           AND DATE("DATE") <= '{}'
           AND SALESTYPE <> 'PosSaleTotal'
@@ -495,7 +495,7 @@ def get_revenue_vs_pax():
         SELECT 
             LOCATION as DEPARTMENT,
             SUM(TOTALEXCLVAT) as TOTAL_REVENUE
-        FROM CREATIVESPACESALES.DBO.SQL_PLECTO
+        FROM AJOUR.PYTHON_IMPORT.PLECTO
         WHERE DATE("DATE") >= '{}'
           AND DATE("DATE") <= '{}'
           AND SALESTYPE <> 'PosSaleTotal'
@@ -570,7 +570,7 @@ def get_labor_vs_revenue():
         SELECT 
             LOCATION as DEPARTMENT,
             SUM(TOTALEXCLVAT) as TOTAL_REVENUE
-        FROM CREATIVESPACESALES.DBO.SQL_PLECTO
+        FROM AJOUR.PYTHON_IMPORT.PLECTO
         WHERE DATE("DATE") >= '{}'
           AND DATE("DATE") <= '{}'
           AND SALESTYPE <> 'PosSaleTotal'
