@@ -197,8 +197,8 @@ def get_pax_by_department():
         ORDER BY TOTAL_PAX DESC
         """.format(benchmark_start, benchmark_end)
         
-        current = query_sql_server(query_current)
-        benchmark = query_sql_server(query_benchmark)
+        current = query_sql_server(query_current, (start_date, end_date))
+        benchmark = query_sql_server(query_benchmark, (benchmark_start, benchmark_end))
         
         # Merge current and benchmark
         result = []
@@ -402,13 +402,13 @@ def get_revenue_by_department():
             Department as DEPARTMENT,
             SUM(TotalExclVAT) as REVENUE_EXCL_VAT
         FROM dbo.SQL_PlecTo
-        WHERE CAST(Date AS DATE) >= CAST('{}' AS DATE)
-          AND CAST(Date AS DATE) <= CAST('{}' AS DATE)
+        WHERE Date >= ?
+          AND Date <= ?
           AND SalesType <> 'PosSaleTotal'
           AND (ItemGroupText IS NULL OR ItemGroupText NOT LIKE '%Gavekort%')
         GROUP BY Department
         ORDER BY SUM(TotalExclVAT) DESC
-        """.format(start_date, end_date)
+        """
         
         # Benchmark period
         query_benchmark = """
@@ -416,16 +416,16 @@ def get_revenue_by_department():
             Department as DEPARTMENT,
             SUM(TotalExclVAT) as REVENUE_EXCL_VAT
         FROM dbo.SQL_PlecTo
-        WHERE CAST(Date AS DATE) >= CAST('{}' AS DATE)
-          AND CAST(Date AS DATE) <= CAST('{}' AS DATE)
+        WHERE Date >= ?
+          AND Date <= ?
           AND SalesType <> 'PosSaleTotal'
           AND (ItemGroupText IS NULL OR ItemGroupText NOT LIKE '%Gavekort%')
         GROUP BY Department
         ORDER BY SUM(TotalExclVAT) DESC
-        """.format(benchmark_start, benchmark_end)
+        """
         
-        current = query_sql_server(query_current)
-        benchmark = query_sql_server(query_benchmark)
+        current = query_sql_server(query_current, (start_date, end_date))
+        benchmark = query_sql_server(query_benchmark, (benchmark_start, benchmark_end))
         
         # Merge current and benchmark
         result = []
