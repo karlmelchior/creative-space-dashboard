@@ -6,6 +6,7 @@ Forbinder til Snowflake og leverer data til Retool dashboard
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 import snowflake.connector
+import pyodbc
 from datetime import datetime, timedelta
 import os
 import csv
@@ -23,13 +24,48 @@ SNOWFLAKE_CONFIG = {
     'warehouse': 'powerbi_wh',
 }
 
+# SQL Server forbindelse (for revenue data)
+SQL_SERVER_CONFIG = {
+    'server': '185.134.253.71,9001',
+    'database': 'CreativeSpaceSales',
+    'username': os.environ.get('SQL_SERVER_USER', 'Creativespace'),
+    'password': os.environ.get('SQL_SERVER_PASSWORD', 'C3RigHl93kFmEy'),
+}
+
 def get_snowflake_connection():
     """Opret Snowflake forbindelse"""
     return snowflake.connector.connect(**SNOWFLAKE_CONFIG)
 
+def get_sql_server_connection():
+    """Opret SQL Server forbindelse"""
+    conn_str = (
+        f"DRIVER={{ODBC Driver 17 for SQL Server}};"
+        f"SERVER={SQL_SERVER_CONFIG['server']};"
+        f"DATABASE={SQL_SERVER_CONFIG['database']};"
+        f"UID={SQL_SERVER_CONFIG['username']};"
+        f"PWD={SQL_SERVER_CONFIG['password']}"
+    )
+    return pyodbc.connect(conn_str)
+
 def query_snowflake(query, params=None):
     """Udfør query og returner som liste af dicts"""
     conn = get_snowflake_connection()
+    try:
+        cursor = conn.cursor()
+        if params:
+            cursor.execute(query, params)
+        else:
+            cursor.execute(query)
+        
+        columns = [col[0] for col in cursor.description]
+        results = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        return results
+    finally:
+        conn.close()
+
+def query_sql_server(query, params=None):
+    """Udfør SQL Server query og returner som liste af dicts"""
+    conn = get_sql_server_connection()
     try:
         cursor = conn.cursor()
         if params:
@@ -109,8 +145,8 @@ def get_pax_by_department():
         ORDER BY TOTAL_PAX DESC
         """.format(benchmark_start, benchmark_end)
         
-        current = query_snowflake(query_current)
-        benchmark = query_snowflake(query_benchmark)
+        current = query_sql_server(query_current)
+        benchmark = query_sql_server(query_benchmark)
         
         # Merge current and benchmark
         result = []
@@ -311,33 +347,33 @@ def get_revenue_by_department():
         # Current period - revenue from SQL_PlecTo synced to Snowflake
         query_current = """
         SELECT 
-            DEPARTMENT,
-            SUM(TOTALEXCLVAT) as REVENUE_EXCL_VAT
-        FROM AJOUR.PYTHON_IMPORT.PLECTO
-        WHERE TRY_TO_DATE(DATE, 'MM/DD/YYYY HH12:MI:SS AM') >= '{}'
-          AND TRY_TO_DATE(DATE, 'MM/DD/YYYY HH12:MI:SS AM') <= '{}'
-          AND SALESTYPE <> 'PosSaleTotal'
-          AND (ITEMGROUPTEXT IS NULL OR ITEMGROUPTEXT NOT LIKE '%Gavekort%')
-        GROUP BY DEPARTMENT
-        ORDER BY REVENUE_EXCL_VAT DESC
+            Department as DEPARTMENT,
+            SUM(TotalExclVAT) as REVENUE_EXCL_VAT
+        FROM dbo.SQL_PlecTo
+        WHERE CAST(Date AS DATE) >= '{}'
+          AND CAST(Date AS DATE) <= '{}'
+          AND SalesType <> 'PosSaleTotal'
+          AND (ItemGroupText IS NULL OR ItemGroupText NOT LIKE '%Gavekort%')
+        GROUP BY Department
+        ORDER BY SUM(TotalExclVAT) DESC
         """.format(start_date, end_date)
         
         # Benchmark period
         query_benchmark = """
         SELECT 
-            DEPARTMENT,
-            SUM(TOTALEXCLVAT) as REVENUE_EXCL_VAT
-        FROM AJOUR.PYTHON_IMPORT.PLECTO
-        WHERE TRY_TO_DATE(DATE, 'MM/DD/YYYY HH12:MI:SS AM') >= '{}'
-          AND TRY_TO_DATE(DATE, 'MM/DD/YYYY HH12:MI:SS AM') <= '{}'
-          AND SALESTYPE <> 'PosSaleTotal'
-          AND (ITEMGROUPTEXT IS NULL OR ITEMGROUPTEXT NOT LIKE '%Gavekort%')
-        GROUP BY DEPARTMENT
-        ORDER BY REVENUE_EXCL_VAT DESC
+            Department as DEPARTMENT,
+            SUM(TotalExclVAT) as REVENUE_EXCL_VAT
+        FROM dbo.SQL_PlecTo
+        WHERE CAST(Date AS DATE) >= '{}'
+          AND CAST(Date AS DATE) <= '{}'
+          AND SalesType <> 'PosSaleTotal'
+          AND (ItemGroupText IS NULL OR ItemGroupText NOT LIKE '%Gavekort%')
+        GROUP BY Department
+        ORDER BY SUM(TotalExclVAT) DESC
         """.format(benchmark_start, benchmark_end)
         
-        current = query_snowflake(query_current)
-        benchmark = query_snowflake(query_benchmark)
+        current = query_sql_server(query_current)
+        benchmark = query_sql_server(query_benchmark)
         
         # Merge current and benchmark
         result = []
