@@ -314,8 +314,8 @@ def get_revenue_by_department():
             DEPARTMENT,
             SUM(TOTALEXCLVAT) as REVENUE_EXCL_VAT
         FROM AJOUR.PYTHON_IMPORT.PLECTO
-        WHERE TO_DATE(DATE) >= '{}'
-          AND TO_DATE(DATE) <= '{}'
+        WHERE TRY_TO_DATE(DATE, 'MM/DD/YYYY HH12:MI:SS AM') >= '{}'
+          AND TRY_TO_DATE(DATE, 'MM/DD/YYYY HH12:MI:SS AM') <= '{}'
           AND SALESTYPE <> 'PosSaleTotal'
           AND (ITEMGROUPTEXT IS NULL OR ITEMGROUPTEXT NOT LIKE '%Gavekort%')
         GROUP BY DEPARTMENT
@@ -328,8 +328,8 @@ def get_revenue_by_department():
             DEPARTMENT,
             SUM(TOTALEXCLVAT) as REVENUE_EXCL_VAT
         FROM AJOUR.PYTHON_IMPORT.PLECTO
-        WHERE TO_DATE(DATE) >= '{}'
-          AND TO_DATE(DATE) <= '{}'
+        WHERE TRY_TO_DATE(DATE, 'MM/DD/YYYY HH12:MI:SS AM') >= '{}'
+          AND TRY_TO_DATE(DATE, 'MM/DD/YYYY HH12:MI:SS AM') <= '{}'
           AND SALESTYPE <> 'PosSaleTotal'
           AND (ITEMGROUPTEXT IS NULL OR ITEMGROUPTEXT NOT LIKE '%Gavekort%')
         GROUP BY DEPARTMENT
@@ -494,8 +494,8 @@ def get_revenue_vs_pax():
             DEPARTMENT,
             SUM(TOTALEXCLVAT) as TOTAL_REVENUE
         FROM AJOUR.PYTHON_IMPORT.PLECTO
-        WHERE TO_DATE(DATE) >= '{}'
-          AND TO_DATE(DATE) <= '{}'
+        WHERE TRY_TO_DATE(DATE, 'MM/DD/YYYY HH12:MI:SS AM') >= '{}'
+          AND TRY_TO_DATE(DATE, 'MM/DD/YYYY HH12:MI:SS AM') <= '{}'
           AND SALESTYPE <> 'PosSaleTotal'
           AND (ITEMGROUPTEXT IS NULL OR ITEMGROUPTEXT NOT LIKE '%Gavekort%')
         GROUP BY DEPARTMENT
@@ -569,8 +569,8 @@ def get_labor_vs_revenue():
             DEPARTMENT,
             SUM(TOTALEXCLVAT) as TOTAL_REVENUE
         FROM AJOUR.PYTHON_IMPORT.PLECTO
-        WHERE TO_DATE(DATE) >= '{}'
-          AND TO_DATE(DATE) <= '{}'
+        WHERE TRY_TO_DATE(DATE, 'MM/DD/YYYY HH12:MI:SS AM') >= '{}'
+          AND TRY_TO_DATE(DATE, 'MM/DD/YYYY HH12:MI:SS AM') <= '{}'
           AND SALESTYPE <> 'PosSaleTotal'
           AND (ITEMGROUPTEXT IS NULL OR ITEMGROUPTEXT NOT LIKE '%Gavekort%')
         GROUP BY DEPARTMENT
