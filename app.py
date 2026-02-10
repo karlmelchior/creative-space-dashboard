@@ -402,8 +402,8 @@ def get_revenue_by_department():
             Department as DEPARTMENT,
             SUM(TotalExclVAT) as REVENUE_EXCL_VAT
         FROM dbo.SQL_PlecTo
-        WHERE CONVERT(DATE, Date, 120) >= '{}'
-          AND CONVERT(DATE, Date, 120) <= '{}'
+        WHERE CAST(Date AS DATE) >= CAST('{}' AS DATE)
+          AND CAST(Date AS DATE) <= CAST('{}' AS DATE)
           AND SalesType <> 'PosSaleTotal'
           AND (ItemGroupText IS NULL OR ItemGroupText NOT LIKE '%Gavekort%')
         GROUP BY Department
@@ -416,8 +416,8 @@ def get_revenue_by_department():
             Department as DEPARTMENT,
             SUM(TotalExclVAT) as REVENUE_EXCL_VAT
         FROM dbo.SQL_PlecTo
-        WHERE CONVERT(DATE, Date, 120) >= '{}'
-          AND CONVERT(DATE, Date, 120) <= '{}'
+        WHERE CAST(Date AS DATE) >= CAST('{}' AS DATE)
+          AND CAST(Date AS DATE) <= CAST('{}' AS DATE)
           AND SalesType <> 'PosSaleTotal'
           AND (ItemGroupText IS NULL OR ItemGroupText NOT LIKE '%Gavekort%')
         GROUP BY Department
