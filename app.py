@@ -102,6 +102,57 @@ def health_check():
             'message': str(e)
         }), 500
 
+@app.route('/api/debug/sql-server', methods=['GET'])
+def debug_sql_server():
+    """Test SQL Server connection with detailed error info"""
+    try:
+        import socket
+        
+        # Test 1: Can we resolve the hostname?
+        server_parts = SQL_SERVER_CONFIG['server'].split(',')
+        host = server_parts[0]
+        port = int(server_parts[1]) if len(server_parts) > 1 else 1433
+        
+        try:
+            ip = socket.gethostbyname(host)
+            dns_status = f"OK - Resolved to {ip}"
+        except Exception as e:
+            dns_status = f"FAILED - {str(e)}"
+        
+        # Test 2: Can we connect to the port?
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(5)
+            result = sock.connect_ex((host, port))
+            sock.close()
+            network_status = "OK - Port is reachable" if result == 0 else f"FAILED - Port {port} not reachable"
+        except Exception as e:
+            network_status = f"FAILED - {str(e)}"
+        
+        # Test 3: Try SQL Server connection
+        try:
+            conn = get_sql_server_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT @@VERSION")
+            version = cursor.fetchone()[0]
+            conn.close()
+            sql_status = f"OK - Connected! Version: {version[:100]}"
+        except Exception as e:
+            sql_status = f"FAILED - {str(e)}"
+        
+        return jsonify({
+            'server': SQL_SERVER_CONFIG['server'],
+            'database': SQL_SERVER_CONFIG['database'],
+            'dns_resolution': dns_status,
+            'network_connectivity': network_status,
+            'sql_server_connection': sql_status
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
 # ==================== PAX (GÆSTER) ====================
 
 @app.route('/api/pax/by-department', methods=['GET'])
@@ -351,8 +402,8 @@ def get_revenue_by_department():
             Department as DEPARTMENT,
             SUM(TotalExclVAT) as REVENUE_EXCL_VAT
         FROM dbo.SQL_PlecTo
-        WHERE CAST(Date AS DATE) >= '{}'
-          AND CAST(Date AS DATE) <= '{}'
+        WHERE CONVERT(DATE, Date, 120) >= '{}'
+          AND CONVERT(DATE, Date, 120) <= '{}'
           AND SalesType <> 'PosSaleTotal'
           AND (ItemGroupText IS NULL OR ItemGroupText NOT LIKE '%Gavekort%')
         GROUP BY Department
@@ -365,8 +416,8 @@ def get_revenue_by_department():
             Department as DEPARTMENT,
             SUM(TotalExclVAT) as REVENUE_EXCL_VAT
         FROM dbo.SQL_PlecTo
-        WHERE CAST(Date AS DATE) >= '{}'
-          AND CAST(Date AS DATE) <= '{}'
+        WHERE CONVERT(DATE, Date, 120) >= '{}'
+          AND CONVERT(DATE, Date, 120) <= '{}'
           AND SalesType <> 'PosSaleTotal'
           AND (ItemGroupText IS NULL OR ItemGroupText NOT LIKE '%Gavekort%')
         GROUP BY Department
