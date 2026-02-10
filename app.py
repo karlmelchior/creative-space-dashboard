@@ -43,7 +43,8 @@ def get_sql_server_connection():
         f"SERVER={SQL_SERVER_CONFIG['server']};"
         f"DATABASE={SQL_SERVER_CONFIG['database']};"
         f"UID={SQL_SERVER_CONFIG['username']};"
-        f"PWD={SQL_SERVER_CONFIG['password']}"
+        f"PWD={SQL_SERVER_CONFIG['password']};"
+        f"TrustServerCertificate=yes;"
     )
     return pyodbc.connect(conn_str)
 
