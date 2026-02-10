@@ -313,28 +313,28 @@ def get_revenue_by_department():
         # Current period - revenue from SQL_PlecTo synced to Snowflake
         query_current = """
         SELECT 
-            LOCATION as DEPARTMENT,
+            DEPARTMENT as DEPARTMENT,
             SUM(TOTALEXCLVAT) as REVENUE_EXCL_VAT
         FROM AJOUR.PYTHON_IMPORT.PLECTO
         WHERE DATE("DATE") >= '{}'
           AND DATE("DATE") <= '{}'
           AND SALESTYPE <> 'PosSaleTotal'
           AND (ITEMGROUPTEXT IS NULL OR ITEMGROUPTEXT NOT LIKE '%Gavekort%')
-        GROUP BY LOCATION
+        GROUP BY DEPARTMENT
         ORDER BY REVENUE_EXCL_VAT DESC
         """.format(start_date, end_date)
         
         # Benchmark period
         query_benchmark = """
         SELECT 
-            LOCATION as DEPARTMENT,
+            DEPARTMENT as DEPARTMENT,
             SUM(TOTALEXCLVAT) as REVENUE_EXCL_VAT
         FROM AJOUR.PYTHON_IMPORT.PLECTO
         WHERE DATE("DATE") >= '{}'
           AND DATE("DATE") <= '{}'
           AND SALESTYPE <> 'PosSaleTotal'
           AND (ITEMGROUPTEXT IS NULL OR ITEMGROUPTEXT NOT LIKE '%Gavekort%')
-        GROUP BY LOCATION
+        GROUP BY DEPARTMENT
         ORDER BY REVENUE_EXCL_VAT DESC
         """.format(benchmark_start, benchmark_end)
         
@@ -493,14 +493,14 @@ def get_revenue_vs_pax():
         # Get revenue data from SQL_PlecTo
         revenue_query = """
         SELECT 
-            LOCATION as DEPARTMENT,
+            DEPARTMENT as DEPARTMENT,
             SUM(TOTALEXCLVAT) as TOTAL_REVENUE
         FROM AJOUR.PYTHON_IMPORT.PLECTO
         WHERE DATE("DATE") >= '{}'
           AND DATE("DATE") <= '{}'
           AND SALESTYPE <> 'PosSaleTotal'
           AND (ITEMGROUPTEXT IS NULL OR ITEMGROUPTEXT NOT LIKE '%Gavekort%')
-        GROUP BY LOCATION
+        GROUP BY DEPARTMENT
         """.format(start_date, end_date)
         
         # Get PAX data
@@ -568,14 +568,14 @@ def get_labor_vs_revenue():
         # Get revenue from SQL_PlecTo
         revenue_query = """
         SELECT 
-            LOCATION as DEPARTMENT,
+            DEPARTMENT as DEPARTMENT,
             SUM(TOTALEXCLVAT) as TOTAL_REVENUE
         FROM AJOUR.PYTHON_IMPORT.PLECTO
         WHERE DATE("DATE") >= '{}'
           AND DATE("DATE") <= '{}'
           AND SALESTYPE <> 'PosSaleTotal'
           AND (ITEMGROUPTEXT IS NULL OR ITEMGROUPTEXT NOT LIKE '%Gavekort%')
-        GROUP BY LOCATION
+        GROUP BY DEPARTMENT
         """.format(start_date, end_date)
         
         labor_data = query_snowflake(labor_query)
