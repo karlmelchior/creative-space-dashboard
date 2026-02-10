@@ -299,11 +299,8 @@ def get_occupancy_by_category():
 @app.route('/api/revenue/by-department', methods=['GET'])
 def get_revenue_by_department():
     """
-    Hent omsætning ex moms per afdeling
+    Hent omsætning ex moms per afdeling fra SQL_PlecTo
     Parameters: start_date, end_date, benchmark_start, benchmark_end
-    
-    Note: This needs to be adjusted based on where your revenue data is stored
-    Currently placeholder - needs real revenue table mapping
     """
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
@@ -311,39 +308,63 @@ def get_revenue_by_department():
     benchmark_end = request.args.get('benchmark_end')
     
     try:
-        # PLACEHOLDER - adjust to your actual revenue data location
-        # This query needs to be customized based on your actual schema
-        query_template = """
+        # Current period - revenue from SQL_PlecTo synced to Snowflake
+        query_current = """
         SELECT 
-            'Frederiksberg' as DEPARTMENT,
-            500000 as REVENUE_EXCL_VAT
-        UNION ALL
-        SELECT 'Lyngby', 450000
-        UNION ALL
-        SELECT 'Odense', 400000
-        UNION ALL
-        SELECT 'Vejle', 350000
-        UNION ALL
-        SELECT 'Østerbro', 480000
-        UNION ALL
-        SELECT 'Aarhus', 420000
-        """
+            LOCATION as DEPARTMENT,
+            SUM(TOTALEXCLVAT) as REVENUE_EXCL_VAT
+        FROM CREATIVESPACESALES.DBO.SQL_PLECTO
+        WHERE DATE("DATE") >= '{}'
+          AND DATE("DATE") <= '{}'
+          AND SALESTYPE <> 'PosSaleTotal'
+          AND (ITEMGROUPTEXT IS NULL OR ITEMGROUPTEXT NOT LIKE '%Gavekort%')
+        GROUP BY LOCATION
+        ORDER BY REVENUE_EXCL_VAT DESC
+        """.format(start_date, end_date)
         
-        # You'll need to replace this with actual revenue query
-        # Example structure (adjust table names):
-        # SELECT 
-        #     department_name,
-        #     SUM(amount_excl_vat) as REVENUE_EXCL_VAT
-        # FROM your_sales_table
-        # WHERE date >= '{}' AND date <= '{}'
-        # GROUP BY department_name
+        # Benchmark period
+        query_benchmark = """
+        SELECT 
+            LOCATION as DEPARTMENT,
+            SUM(TOTALEXCLVAT) as REVENUE_EXCL_VAT
+        FROM CREATIVESPACESALES.DBO.SQL_PLECTO
+        WHERE DATE("DATE") >= '{}'
+          AND DATE("DATE") <= '{}'
+          AND SALESTYPE <> 'PosSaleTotal'
+          AND (ITEMGROUPTEXT IS NULL OR ITEMGROUPTEXT NOT LIKE '%Gavekort%')
+        GROUP BY LOCATION
+        ORDER BY REVENUE_EXCL_VAT DESC
+        """.format(benchmark_start, benchmark_end)
         
-        results = query_snowflake(query_template)
+        current = query_snowflake(query_current)
+        benchmark = query_snowflake(query_benchmark)
         
-        return jsonify({
-            'note': 'PLACEHOLDER DATA - Needs real revenue table mapping',
-            'data': results
-        })
+        # Merge current and benchmark
+        result = []
+        benchmark_dict = {item['DEPARTMENT']: item for item in benchmark if item['DEPARTMENT']}
+        
+        for dept in current:
+            if not dept['DEPARTMENT']:
+                continue
+                
+            dept_name = dept['DEPARTMENT']
+            benchmark_data = benchmark_dict.get(dept_name, {})
+            
+            current_revenue = dept['REVENUE_EXCL_VAT'] or 0
+            benchmark_revenue = benchmark_data.get('REVENUE_EXCL_VAT', 0) or 0
+            
+            change_percent = 0
+            if benchmark_revenue > 0:
+                change_percent = ((current_revenue - benchmark_revenue) / benchmark_revenue) * 100
+            
+            result.append({
+                'department': dept_name,
+                'current_revenue': round(current_revenue, 2),
+                'benchmark_revenue': round(benchmark_revenue, 2),
+                'change_percent': round(change_percent, 2)
+            })
+        
+        return jsonify(result)
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -467,6 +488,19 @@ def get_revenue_vs_pax():
     end_date = request.args.get('end_date')
     
     try:
+        # Get revenue data from SQL_PlecTo
+        revenue_query = """
+        SELECT 
+            LOCATION as DEPARTMENT,
+            SUM(TOTALEXCLVAT) as TOTAL_REVENUE
+        FROM CREATIVESPACESALES.DBO.SQL_PLECTO
+        WHERE DATE("DATE") >= '{}'
+          AND DATE("DATE") <= '{}'
+          AND SALESTYPE <> 'PosSaleTotal'
+          AND (ITEMGROUPTEXT IS NULL OR ITEMGROUPTEXT NOT LIKE '%Gavekort%')
+        GROUP BY LOCATION
+        """.format(start_date, end_date)
+        
         # Get PAX data
         pax_query = """
         SELECT 
@@ -479,17 +513,24 @@ def get_revenue_vs_pax():
         GROUP BY r.NAME
         """.format(start_date, end_date)
         
+        revenue_data = query_snowflake(revenue_query)
         pax_data = query_snowflake(pax_query)
         
-        # PLACEHOLDER for revenue - needs real revenue data
+        # Merge data
+        revenue_dict = {item['DEPARTMENT']: item['TOTAL_REVENUE'] for item in revenue_data if item['DEPARTMENT']}
+        
         result = []
         for dept in pax_data:
             if dept['DEPARTMENT']:
+                pax = dept['TOTAL_PAX'] or 0
+                revenue = revenue_dict.get(dept['DEPARTMENT'], 0) or 0
+                revenue_per_pax = (revenue / pax) if pax > 0 else 0
+                
                 result.append({
                     'department': dept['DEPARTMENT'],
-                    'pax': dept['TOTAL_PAX'] or 0,
-                    'revenue': 0,  # PLACEHOLDER - needs real revenue data
-                    'revenue_per_pax': 0  # Will calculate when revenue is available
+                    'pax': pax,
+                    'revenue': round(revenue, 2),
+                    'revenue_per_pax': round(revenue_per_pax, 2)
                 })
         
         return jsonify(result)
@@ -522,17 +563,37 @@ def get_labor_vs_revenue():
         GROUP BY d.NAME
         """.format(start_date, end_date)
         
-        labor_data = query_snowflake(labor_query)
+        # Get revenue from SQL_PlecTo
+        revenue_query = """
+        SELECT 
+            LOCATION as DEPARTMENT,
+            SUM(TOTALEXCLVAT) as TOTAL_REVENUE
+        FROM CREATIVESPACESALES.DBO.SQL_PLECTO
+        WHERE DATE("DATE") >= '{}'
+          AND DATE("DATE") <= '{}'
+          AND SALESTYPE <> 'PosSaleTotal'
+          AND (ITEMGROUPTEXT IS NULL OR ITEMGROUPTEXT NOT LIKE '%Gavekort%')
+        GROUP BY LOCATION
+        """.format(start_date, end_date)
         
-        # PLACEHOLDER - needs real revenue data
+        labor_data = query_snowflake(labor_query)
+        revenue_data = query_snowflake(revenue_query)
+        
+        # Merge data
+        revenue_dict = {item['DEPARTMENT']: item['TOTAL_REVENUE'] for item in revenue_data if item['DEPARTMENT']}
+        
         result = []
         for dept in labor_data:
             if dept['DEPARTMENT']:
+                labor_cost = dept['LABOR_COST'] or 0
+                revenue = revenue_dict.get(dept['DEPARTMENT'], 0) or 0
+                labor_percentage = (labor_cost / revenue * 100) if revenue > 0 else 0
+                
                 result.append({
                     'department': dept['DEPARTMENT'],
-                    'labor_cost': round(dept['LABOR_COST'] or 0, 2),
-                    'revenue': 0,  # PLACEHOLDER
-                    'labor_percentage': 0  # Will calculate when revenue is available
+                    'labor_cost': round(labor_cost, 2),
+                    'revenue': round(revenue, 2),
+                    'labor_percentage': round(labor_percentage, 2)
                 })
         
         return jsonify(result)
