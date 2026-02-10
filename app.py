@@ -102,6 +102,80 @@ def health_check():
             'message': str(e)
         }), 500
 
+@app.route('/api/pax/by-department', methods=['GET'])
+def get_pax_by_department():
+    """Get PAX (guests) by department with benchmark comparison"""
+    try:
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        benchmark_start = request.args.get('benchmark_start')
+        benchmark_end = request.args.get('benchmark_end')
+        
+        # Query current period PAX from Snowflake
+        query_current = """
+        SELECT 
+            r.NAME as DEPARTMENT,
+            SUM(CAST(b.RESTAURANTBOOKING_B_PAX AS NUMBER)) as PAX
+        FROM AJOUR.PYTHON_IMPORT.BOOKINGS b
+        JOIN AJOUR.PYTHON_IMPORT.RESTAURANTS r ON b.RESTAURANTBOOKING_B_RESTAURANT = r.ID
+        WHERE TRY_TO_DATE(b.RESTAURANTBOOKING_B_DATE_TIME, 'MM/DD/YYYY HH12:MI:SS AM') >= TO_DATE('{}', 'YYYY-MM-DD')
+          AND TRY_TO_DATE(b.RESTAURANTBOOKING_B_DATE_TIME, 'MM/DD/YYYY HH12:MI:SS AM') <= TO_DATE('{}', 'YYYY-MM-DD')
+          AND b.RESTAURANTBOOKING_B_STATUS = 'Arrived'
+        GROUP BY r.NAME
+        ORDER BY SUM(CAST(b.RESTAURANTBOOKING_B_PAX AS NUMBER)) DESC
+        """.format(start_date, end_date)
+        
+        current = query_snowflake(query_current)
+        
+        # Query benchmark period PAX
+        query_benchmark = """
+        SELECT 
+            r.NAME as DEPARTMENT,
+            SUM(CAST(b.RESTAURANTBOOKING_B_PAX AS NUMBER)) as PAX
+        FROM AJOUR.PYTHON_IMPORT.BOOKINGS b
+        JOIN AJOUR.PYTHON_IMPORT.RESTAURANTS r ON b.RESTAURANTBOOKING_B_RESTAURANT = r.ID
+        WHERE TRY_TO_DATE(b.RESTAURANTBOOKING_B_DATE_TIME, 'MM/DD/YYYY HH12:MI:SS AM') >= TO_DATE('{}', 'YYYY-MM-DD')
+          AND TRY_TO_DATE(b.RESTAURANTBOOKING_B_DATE_TIME, 'MM/DD/YYYY HH12:MI:SS AM') <= TO_DATE('{}', 'YYYY-MM-DD')
+          AND b.RESTAURANTBOOKING_B_STATUS = 'Arrived'
+        GROUP BY r.NAME
+        """.format(benchmark_start, benchmark_end)
+        
+        benchmark = query_snowflake(query_benchmark)
+        
+        # Combine results
+        results = []
+        current_dict = {row['DEPARTMENT']: row['PAX'] for row in current}
+        benchmark_dict = {row['DEPARTMENT']: row['PAX'] for row in benchmark}
+        
+        all_departments = set(current_dict.keys()) | set(benchmark_dict.keys())
+        
+        for dept in all_departments:
+            current_pax = current_dict.get(dept, 0)
+            benchmark_pax = benchmark_dict.get(dept, 0)
+            
+            if benchmark_pax > 0:
+                change_pct = ((current_pax - benchmark_pax) / benchmark_pax) * 100
+            else:
+                change_pct = 0
+            
+            results.append({
+                'department': dept,
+                'current_pax': current_pax,
+                'benchmark_pax': benchmark_pax,
+                'change_percent': round(change_pct, 2)
+            })
+        
+        # Sort by current PAX descending
+        results.sort(key=lambda x: x['current_pax'], reverse=True)
+        
+        return jsonify(results)
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
 @app.route('/api/debug/sql-server', methods=['GET'])
 def debug_sql_server():
     """Test SQL Server connection with detailed error info"""
