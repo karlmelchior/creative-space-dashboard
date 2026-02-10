@@ -1,8 +1,6 @@
-# FORCE UPDATE - Version 3.0
 """
 Creative Space Dashboard Backend API
 Forbinder til Snowflake og leverer data til Retool dashboard
-# Updated version 2
 """
 
 from flask import Flask, jsonify, request, send_file
@@ -313,11 +311,11 @@ def get_revenue_by_department():
         # Current period - revenue from SQL_PlecTo synced to Snowflake
         query_current = """
         SELECT 
-            DEPARTMENT as DEPARTMENT,
+            DEPARTMENT,
             SUM(TOTALEXCLVAT) as REVENUE_EXCL_VAT
         FROM AJOUR.PYTHON_IMPORT.PLECTO
-        WHERE DATE("DATE") >= '{}'
-          AND DATE("DATE") <= '{}'
+        WHERE TO_DATE(DATE) >= '{}'
+          AND TO_DATE(DATE) <= '{}'
           AND SALESTYPE <> 'PosSaleTotal'
           AND (ITEMGROUPTEXT IS NULL OR ITEMGROUPTEXT NOT LIKE '%Gavekort%')
         GROUP BY DEPARTMENT
@@ -327,11 +325,11 @@ def get_revenue_by_department():
         # Benchmark period
         query_benchmark = """
         SELECT 
-            DEPARTMENT as DEPARTMENT,
+            DEPARTMENT,
             SUM(TOTALEXCLVAT) as REVENUE_EXCL_VAT
         FROM AJOUR.PYTHON_IMPORT.PLECTO
-        WHERE DATE("DATE") >= '{}'
-          AND DATE("DATE") <= '{}'
+        WHERE TO_DATE(DATE) >= '{}'
+          AND TO_DATE(DATE) <= '{}'
           AND SALESTYPE <> 'PosSaleTotal'
           AND (ITEMGROUPTEXT IS NULL OR ITEMGROUPTEXT NOT LIKE '%Gavekort%')
         GROUP BY DEPARTMENT
@@ -493,11 +491,11 @@ def get_revenue_vs_pax():
         # Get revenue data from SQL_PlecTo
         revenue_query = """
         SELECT 
-            DEPARTMENT as DEPARTMENT,
+            DEPARTMENT,
             SUM(TOTALEXCLVAT) as TOTAL_REVENUE
         FROM AJOUR.PYTHON_IMPORT.PLECTO
-        WHERE DATE("DATE") >= '{}'
-          AND DATE("DATE") <= '{}'
+        WHERE TO_DATE(DATE) >= '{}'
+          AND TO_DATE(DATE) <= '{}'
           AND SALESTYPE <> 'PosSaleTotal'
           AND (ITEMGROUPTEXT IS NULL OR ITEMGROUPTEXT NOT LIKE '%Gavekort%')
         GROUP BY DEPARTMENT
@@ -568,11 +566,11 @@ def get_labor_vs_revenue():
         # Get revenue from SQL_PlecTo
         revenue_query = """
         SELECT 
-            DEPARTMENT as DEPARTMENT,
+            DEPARTMENT,
             SUM(TOTALEXCLVAT) as TOTAL_REVENUE
         FROM AJOUR.PYTHON_IMPORT.PLECTO
-        WHERE DATE("DATE") >= '{}'
-          AND DATE("DATE") <= '{}'
+        WHERE TO_DATE(DATE) >= '{}'
+          AND TO_DATE(DATE) <= '{}'
           AND SALESTYPE <> 'PosSaleTotal'
           AND (ITEMGROUPTEXT IS NULL OR ITEMGROUPTEXT NOT LIKE '%Gavekort%')
         GROUP BY DEPARTMENT
