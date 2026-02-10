@@ -1,6 +1,7 @@
 """
 Creative Space Dashboard Backend API
 Forbinder til Snowflake og leverer data til Retool dashboard
+# Updated version 2
 """
 
 from flask import Flask, jsonify, request, send_file
