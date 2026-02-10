@@ -39,7 +39,7 @@ def get_snowflake_connection():
 def get_sql_server_connection():
     """Opret SQL Server forbindelse"""
     conn_str = (
-        f"DRIVER={{ODBC Driver 17 for SQL Server}};"
+        f"DRIVER={{ODBC Driver 18 for SQL Server}};"
         f"SERVER={SQL_SERVER_CONFIG['server']};"
         f"DATABASE={SQL_SERVER_CONFIG['database']};"
         f"UID={SQL_SERVER_CONFIG['username']};"
