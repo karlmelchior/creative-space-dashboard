@@ -120,6 +120,7 @@ def get_pax_by_department():
         JOIN DINNERBOOKING.PYTHON_IMPORT.RESTAURANTS r ON b.RESTAURANT_ID = r.ID
         WHERE CAST(b.RESTAURANTBOOKING_B_DATE_TIME AS DATE) >= TO_DATE('{}', 'YYYY-MM-DD')
           AND CAST(b.RESTAURANTBOOKING_B_DATE_TIME AS DATE) <= TO_DATE('{}', 'YYYY-MM-DD')
+          AND b.RESTAURANTBOOKING_B_STATUS = 'current'
         GROUP BY r.NAME
         ORDER BY SUM(CAST(b.RESTAURANTBOOKING_B_PAX AS NUMBER)) DESC
         """.format(start_date, end_date)
@@ -135,6 +136,7 @@ def get_pax_by_department():
         JOIN DINNERBOOKING.PYTHON_IMPORT.RESTAURANTS r ON b.RESTAURANT_ID = r.ID
         WHERE CAST(b.RESTAURANTBOOKING_B_DATE_TIME AS DATE) >= TO_DATE('{}', 'YYYY-MM-DD')
           AND CAST(b.RESTAURANTBOOKING_B_DATE_TIME AS DATE) <= TO_DATE('{}', 'YYYY-MM-DD')
+          AND b.RESTAURANTBOOKING_B_STATUS = 'current'
         GROUP BY r.NAME
         """.format(benchmark_start, benchmark_end)
         
