@@ -1,12 +1,14 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-import requests
+import requests as http_requests
 from requests.auth import HTTPBasicAuth
 from datetime import datetime, timedelta
 import pytz
 import time
-import pyodbc
-import snowflake.connector
+import io
+import json
+from zipfile import ZipFile
+import os
 
 app = Flask(__name__)
 CORS(app)
@@ -55,6 +57,7 @@ def get_dinnerbooking_auth():
 
 def get_sql_connection():
     """Connect to SQL Server."""
+    import pyodbc
     conn_str = (
         f"DRIVER={{ODBC Driver 18 for SQL Server}};"
         f"SERVER={SQL_SERVER};"
@@ -69,6 +72,7 @@ def get_sql_connection():
 
 def get_snowflake_connection(database):
     """Connect to Snowflake."""
+    import snowflake.connector
     return snowflake.connector.connect(
         user=SF_USER,
         password=SF_PASSWORD,
@@ -80,8 +84,53 @@ def get_snowflake_connection(database):
     )
 
 
+def get_dump_for_restaurant(auth, restaurant_id):
+    """
+    Download and parse the full booking dump for a single restaurant.
+    Returns a list of all booking dicts.
+    """
+    url = f"{DINNERBOOKING_BASE_URL}/dk/da-DK/bookings/dump/{restaurant_id}.zip"
+    r = http_requests.get(url, auth=auth, timeout=120)
+    r.raise_for_status()
+
+    all_bookings = []
+    zip_file = io.BytesIO(r.content)
+    with ZipFile(zip_file, 'r') as archive:
+        for file_name in archive.namelist():
+            file_content = archive.read(file_name)
+            bookings = json.loads(file_content.decode('utf-8'))
+            all_bookings.extend(bookings)
+
+    return all_bookings
+
+
+def filter_bookings_by_date(bookings, date_str, status='current'):
+    """
+    Filter bookings for a specific date and status.
+    Returns total PAX and booking count.
+    """
+    total_pax = 0
+    booking_count = 0
+
+    for booking in bookings:
+        rb = booking.get('RestaurantBooking', {})
+        booking_date = rb.get('b_date_time', '')
+        booking_status = rb.get('b_status', '')
+
+        if booking_date and booking_date[:10] == date_str and booking_status == status:
+            pax = rb.get('b_pax', 0)
+            try:
+                pax = int(pax)
+            except (ValueError, TypeError):
+                pax = 0
+            total_pax += pax
+            booking_count += 1
+
+    return total_pax, booking_count
+
+
 # =============================================================================
-# ENDPOINT 1: REVENUE BY DEPARTMENT (SQL Server) - existing
+# ENDPOINT 1: REVENUE BY DEPARTMENT (SQL Server)
 # =============================================================================
 
 @app.route('/api/revenue/by-department', methods=['GET'])
@@ -90,6 +139,7 @@ def revenue_by_department():
     start_date = request.args.get('start_date', datetime.now().strftime('%Y-%m-%d'))
     end_date = request.args.get('end_date', datetime.now().strftime('%Y-%m-%d'))
 
+    conn = None
     try:
         conn = get_sql_connection()
         cursor = conn.cursor()
@@ -118,25 +168,34 @@ def revenue_by_department():
                 'total_revenue': float(row[1]) if row[1] else 0
             })
 
-        conn.close()
         return jsonify({'data': results, 'start_date': start_date, 'end_date': end_date})
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+    finally:
+        if conn:
+            conn.close()
+
 
 # =============================================================================
-# ENDPOINT 2: LIVE PAX BY DEPARTMENT (DinnerBooking API - REAL-TIME!)
+# ENDPOINT 2: LIVE PAX BY DEPARTMENT (DinnerBooking API - REAL-TIME)
 # =============================================================================
 
 @app.route('/api/pax/live', methods=['GET'])
 def pax_live():
     """
     Get LIVE PAX data directly from DinnerBooking API.
-    This bypasses Snowflake entirely and gives real-time booking counts.
+    Uses the dump endpoint (full booking export per restaurant) to get ALL bookings,
+    then filters by date and status='current'.
+    
+    This matches exactly what DinnerBooking shows in their UI.
+    
+    Note: Downloads ~170K bookings per restaurant as zip. 
+    Total response time: ~30-60 seconds for all 6 restaurants.
     
     Query params:
-        date: YYYY-MM-DD (default: today)
+        date: YYYY-MM-DD (default: today in Copenhagen timezone)
     """
     copenhagen = pytz.timezone('Europe/Copenhagen')
     date_str = request.args.get('date', datetime.now(copenhagen).strftime('%Y-%m-%d'))
@@ -147,26 +206,8 @@ def pax_live():
 
     for restaurant_id, restaurant_name in RESTAURANT_IDS.items():
         try:
-            url = f"{DINNERBOOKING_BASE_URL}/dk/da-DK/bookings/get_activity_for_day/{restaurant_id}/{date_str}.json"
-            r = requests.get(url, auth=auth, timeout=15)
-            r.raise_for_status()
-            data = r.json()
-
-            bookings = data.get('bookings', [])
-
-            # Sum PAX only for current (non-deleted) bookings
-            department_pax = 0
-            booking_count = 0
-            for booking in bookings:
-                status = booking.get('RestaurantBooking', {}).get('b_status', '')
-                if status == 'current':
-                    pax = booking.get('RestaurantBooking', {}).get('b_pax', 0)
-                    try:
-                        pax = int(pax)
-                    except (ValueError, TypeError):
-                        pax = 0
-                    department_pax += pax
-                    booking_count += 1
+            bookings = get_dump_for_restaurant(auth, restaurant_id)
+            department_pax, booking_count = filter_bookings_by_date(bookings, date_str)
 
             total_pax += department_pax
             results.append({
@@ -176,7 +217,7 @@ def pax_live():
                 'bookings': booking_count,
             })
 
-            # Respect rate limit: 1 request per second
+            # Respect rate limit: 1 request per second between restaurants
             time.sleep(1)
 
         except Exception as e:
@@ -203,10 +244,11 @@ def pax_live():
 
 @app.route('/api/pax/by-department', methods=['GET'])
 def pax_by_department():
-    """Get PAX by department from Snowflake (historical data, updated nightly)."""
+    """Get PAX by department from Snowflake (historical data, updated hourly)."""
     start_date = request.args.get('start_date', datetime.now().strftime('%Y-%m-%d'))
     end_date = request.args.get('end_date', datetime.now().strftime('%Y-%m-%d'))
 
+    conn = None
     try:
         conn = get_snowflake_connection('DINNERBOOKING')
         cursor = conn.cursor()
@@ -234,16 +276,19 @@ def pax_by_department():
                 'total_pax': int(row[1]) if row[1] else 0
             })
 
-        conn.close()
         return jsonify({
             'data': results,
             'start_date': start_date,
             'end_date': end_date,
-            'source': 'Snowflake (nightly update)',
+            'source': 'Snowflake (hourly update)',
         })
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+    finally:
+        if conn:
+            conn.close()
 
 
 # =============================================================================
@@ -256,6 +301,7 @@ def labor_by_department():
     start_date = request.args.get('start_date', datetime.now().strftime('%Y-%m-%d'))
     end_date = request.args.get('end_date', datetime.now().strftime('%Y-%m-%d'))
 
+    conn = None
     try:
         conn = get_snowflake_connection('PLANDAY')
         cursor = conn.cursor()
@@ -282,7 +328,6 @@ def labor_by_department():
                 'total_labor': float(row[1]) if row[1] else 0
             })
 
-        conn.close()
         return jsonify({
             'data': results,
             'start_date': start_date,
@@ -292,111 +337,72 @@ def labor_by_department():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
-# =============================================================================
-# ENDPOINT 5: PAX DATE RANGE (DinnerBooking API live - for multiple days)
-# =============================================================================
-
-@app.route('/api/pax/live/range', methods=['GET'])
-def pax_live_range():
-    """
-    Get LIVE PAX data for a date range from DinnerBooking API.
-    NOTE: Due to rate limits (10 req/min), max range is ~1-2 days efficiently.
-    For longer ranges, use the Snowflake endpoint.
-    
-    Query params:
-        start_date: YYYY-MM-DD (default: today)
-        end_date: YYYY-MM-DD (default: today)
-    """
-    copenhagen = pytz.timezone('Europe/Copenhagen')
-    start_date_str = request.args.get('start_date', datetime.now(copenhagen).strftime('%Y-%m-%d'))
-    end_date_str = request.args.get('end_date', start_date_str)
-
-    start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
-    end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
-
-    # Limit range to 7 days to avoid hitting rate limits
-    if (end_date - start_date).days > 7:
-        return jsonify({
-            'error': 'Max date range is 7 days for live API. Use /api/pax/by-department for longer ranges.',
-        }), 400
-
-    auth = get_dinnerbooking_auth()
-    all_results = []
-    grand_total = 0
-    requests_made = 0
-    rate_limit_start = datetime.now()
-
-    current_date = start_date
-    while current_date <= end_date:
-        date_str = current_date.strftime('%Y-%m-%d')
-
-        for restaurant_id, restaurant_name in RESTAURANT_IDS.items():
-            try:
-                # Rate limiting: 10 requests per minute
-                requests_made += 1
-                if requests_made >= 10:
-                    elapsed = (datetime.now() - rate_limit_start).total_seconds()
-                    if elapsed < 60:
-                        time.sleep(60 - elapsed)
-                    requests_made = 0
-                    rate_limit_start = datetime.now()
-
-                url = f"{DINNERBOOKING_BASE_URL}/dk/da-DK/bookings/get_activity_for_day/{restaurant_id}/{date_str}.json"
-                r = requests.get(url, auth=auth, timeout=15)
-                r.raise_for_status()
-                data = r.json()
-
-                bookings = data.get('bookings', [])
-                department_pax = 0
-                booking_count = 0
-                for booking in bookings:
-                    status = booking.get('RestaurantBooking', {}).get('b_status', '')
-                    if status == 'current':
-                        pax = booking.get('RestaurantBooking', {}).get('b_pax', 0)
-                        try:
-                            pax = int(pax)
-                        except (ValueError, TypeError):
-                            pax = 0
-                        department_pax += pax
-                        booking_count += 1
-
-                grand_total += department_pax
-                all_results.append({
-                    'date': date_str,
-                    'department': restaurant_name,
-                    'restaurant_id': restaurant_id,
-                    'pax': department_pax,
-                    'bookings': booking_count,
-                })
-
-                time.sleep(1)
-
-            except Exception as e:
-                all_results.append({
-                    'date': date_str,
-                    'department': restaurant_name,
-                    'restaurant_id': restaurant_id,
-                    'pax': 0,
-                    'bookings': 0,
-                    'error': str(e),
-                })
-
-        current_date += timedelta(days=1)
-
-    return jsonify({
-        'data': all_results,
-        'total_pax': grand_total,
-        'start_date': start_date_str,
-        'end_date': end_date_str,
-        'source': 'DinnerBooking API (live)',
-        'fetched_at': datetime.now(copenhagen).strftime('%Y-%m-%d %H:%M:%S'),
-    })
+    finally:
+        if conn:
+            conn.close()
 
 
 # =============================================================================
 # HEALTH CHECK
 # =============================================================================
+
+@app.route('/api/debug/dump-sample', methods=['GET'])
+def debug_dump_sample():
+    """
+    DEBUG: Returns a sample of raw dump data to verify JSON structure.
+    Shows first 3 bookings from Frederiksberg (2070).
+    Remove this endpoint after verification.
+    """
+    auth = get_dinnerbooking_auth()
+    restaurant_id = request.args.get('restaurant_id', '2070')
+    date_str = request.args.get('date', '')
+    
+    try:
+        url = f"{DINNERBOOKING_BASE_URL}/dk/da-DK/bookings/dump/{restaurant_id}.zip"
+        r = http_requests.get(url, auth=auth, timeout=120)
+        r.raise_for_status()
+
+        zip_file = io.BytesIO(r.content)
+        file_info = []
+        sample_bookings = []
+        total_bookings = 0
+        matching_bookings = 0
+
+        with ZipFile(zip_file, 'r') as archive:
+            for file_name in archive.namelist():
+                file_content = archive.read(file_name)
+                bookings = json.loads(file_content.decode('utf-8'))
+                file_info.append({
+                    'file_name': file_name,
+                    'booking_count': len(bookings),
+                })
+                total_bookings += len(bookings)
+
+                for booking in bookings:
+                    rb = booking.get('RestaurantBooking', {})
+                    bd = rb.get('b_date_time', '')
+                    
+                    if date_str and bd and bd[:10] == date_str:
+                        matching_bookings += 1
+                        if len(sample_bookings) < 3:
+                            sample_bookings.append(booking)
+                    elif not date_str and len(sample_bookings) < 3:
+                        sample_bookings.append(booking)
+
+        return jsonify({
+            'restaurant_id': restaurant_id,
+            'zip_files': file_info,
+            'total_bookings_in_dump': total_bookings,
+            'matching_bookings_for_date': matching_bookings if date_str else 'no date filter',
+            'date_filter': date_str or 'none',
+            'sample_bookings': sample_bookings,
+            'keys_in_first_booking': list(sample_bookings[0].keys()) if sample_bookings else [],
+            'restaurant_booking_keys': list(sample_bookings[0].get('RestaurantBooking', {}).keys()) if sample_bookings else [],
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/', methods=['GET'])
 def health():
@@ -405,13 +411,13 @@ def health():
         'status': 'ok',
         'endpoints': [
             'GET /api/revenue/by-department?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD',
-            'GET /api/pax/live?date=YYYY-MM-DD  (REAL-TIME from DinnerBooking API)',
-            'GET /api/pax/live/range?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD  (live, max 7 days)',
-            'GET /api/pax/by-department?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD  (Snowflake)',
+            'GET /api/pax/live?date=YYYY-MM-DD  (REAL-TIME from DinnerBooking API, ~30-60s)',
+            'GET /api/pax/by-department?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD  (Snowflake, fast)',
             'GET /api/labor/by-department?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD',
         ]
     })
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port, debug=False)
