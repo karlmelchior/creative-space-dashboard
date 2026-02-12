@@ -186,19 +186,15 @@ def revenue_by_department():
 def pax_live():
     """
     Get LIVE PAX data directly from DinnerBooking API.
-    Uses the dump endpoint (full booking export per restaurant) to get ALL bookings,
-    then filters by date and status='current'.
-    
-    This matches exactly what DinnerBooking shows in their UI.
-    
-    Note: Downloads ~170K bookings per restaurant as zip. 
-    Total response time: ~30-60 seconds for all 6 restaurants.
+    Uses the 'Bookings for a day' endpoint with status filter for 'current' only.
+    This excludes waiting, deleted, no_show, payment_error, and moved bookings.
     
     Query params:
         date: YYYY-MM-DD (default: today in Copenhagen timezone)
     """
     copenhagen = pytz.timezone('Europe/Copenhagen')
     date_str = request.args.get('date', datetime.now(copenhagen).strftime('%Y-%m-%d'))
+    target_date = datetime.strptime(date_str, '%Y-%m-%d')
 
     auth = get_dinnerbooking_auth()
     results = []
@@ -206,8 +202,42 @@ def pax_live():
 
     for restaurant_id, restaurant_name in RESTAURANT_IDS.items():
         try:
-            bookings = get_dump_for_restaurant(auth, restaurant_id)
-            department_pax, booking_count = filter_bookings_by_date(bookings, date_str)
+            department_pax = 0
+            booking_count = 0
+            page = 1
+            has_more = True
+
+            while has_more:
+                url = (
+                    f"{DINNERBOOKING_BASE_URL}/dk/da-DK/bookings/restaurant/"
+                    f"{restaurant_id}/{target_date.year}/{target_date.month}/{target_date.day}.json"
+                    f"?page={page}"
+                    f"&filterFormId=RestaurantBooking"
+                    f"&RestaurantBooking[b_status]=current"
+                )
+                r = http_requests.get(url, auth=auth, timeout=30)
+                r.raise_for_status()
+                data = r.json()
+
+                bookings = data.get('restaurantBookings', [])
+
+                for booking in bookings:
+                    rb = booking.get('RestaurantBooking', {})
+                    pax = rb.get('b_pax', 0)
+                    try:
+                        pax = int(pax)
+                    except (ValueError, TypeError):
+                        pax = 0
+                    department_pax += pax
+                    booking_count += 1
+
+                # Check pagination
+                paging = data.get('paging', {}).get('RestaurantBooking', {})
+                page_count = paging.get('pageCount', 1)
+                has_more = page < page_count
+                page += 1
+
+                time.sleep(1)  # Rate limit: 1 request per second
 
             total_pax += department_pax
             results.append({
@@ -216,9 +246,6 @@ def pax_live():
                 'pax': department_pax,
                 'bookings': booking_count,
             })
-
-            # Respect rate limit: 1 request per second between restaurants
-            time.sleep(1)
 
         except Exception as e:
             results.append({
