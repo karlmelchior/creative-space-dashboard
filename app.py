@@ -147,7 +147,7 @@ def revenue_by_department():
         query = """
             SELECT 
                 Department,
-                SUM(Amount) as total_revenue
+                SUM(TotalExclVAT) as total_revenue
             FROM dbo.SQL_PlecTo
             WHERE CAST(Date AS DATE) >= ?
               AND CAST(Date AS DATE) <= ?
