@@ -363,7 +363,7 @@ def pax_by_department():
         for dept in all_departments:
             current_pax = current_map.get(dept, 0)
             benchmark_pax = benchmark_map.get(dept, 0)
-            change_percent = ((current_pax - benchmark_pax) / benchmark_pax * 100) if benchmark_pax else 0
+            change = current_pax - benchmark_pax
 
             entry = {
                 'department': dept,
@@ -371,7 +371,7 @@ def pax_by_department():
             }
             if benchmark_start and benchmark_end:
                 entry['benchmark_pax'] = benchmark_pax
-                entry['change_percent'] = round(change_percent, 2)
+                entry['change'] = change
 
             results.append(entry)
 
@@ -382,6 +382,57 @@ def pax_by_department():
             'benchmark_start': benchmark_start or None,
             'benchmark_end': benchmark_end or None,
             'source': 'Snowflake (hourly update)',
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        if conn:
+            conn.close()
+
+
+# =============================================================================
+# DEBUG: Check Snowflake bookings
+# =============================================================================
+
+@app.route('/api/debug/snowflake-check', methods=['GET'])
+def debug_snowflake_check():
+    """Debug: Check Snowflake bookings table status."""
+    conn = None
+    try:
+        conn = get_snowflake_connection('DINNERBOOKING')
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT COUNT(*) FROM DINNERBOOKING.PYTHON_IMPORT.BOOKINGS")
+        total = cursor.fetchone()[0]
+
+        cursor.execute("""
+            SELECT COUNT(*), MIN(RESTAURANTBOOKING_B_DATE_TIME), MAX(RESTAURANTBOOKING_B_DATE_TIME)
+            FROM DINNERBOOKING.PYTHON_IMPORT.BOOKINGS
+            WHERE RESTAURANTBOOKING_B_STATUS = 'current'
+        """)
+        row = cursor.fetchone()
+
+        cursor.execute("""
+            SELECT RESTAURANT_ID, COUNT(*), SUM(RESTAURANTBOOKING_B_PAX)
+            FROM DINNERBOOKING.PYTHON_IMPORT.BOOKINGS
+            WHERE CAST(RESTAURANTBOOKING_B_DATE_TIME AS DATE) = CURRENT_DATE()
+              AND RESTAURANTBOOKING_B_STATUS = 'current'
+            GROUP BY RESTAURANT_ID
+        """)
+        today_rows = cursor.fetchall()
+
+        cursor.execute("SELECT * FROM DINNERBOOKING.PYTHON_IMPORT.BOOKINGS LIMIT 1")
+        columns = [desc[0] for desc in cursor.description]
+
+        return jsonify({
+            'total_rows': total,
+            'current_status_count': row[0],
+            'min_date': str(row[1]),
+            'max_date': str(row[2]),
+            'today_by_restaurant': [{'restaurant_id': r[0], 'count': r[1], 'pax': int(r[2])} for r in today_rows],
+            'columns': columns,
         })
 
     except Exception as e:
