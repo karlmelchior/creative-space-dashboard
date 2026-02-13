@@ -135,40 +135,79 @@ def filter_bookings_by_date(bookings, date_str, status='current'):
 
 @app.route('/api/revenue/by-department', methods=['GET'])
 def revenue_by_department():
-    """Get revenue by department from SQL Server."""
+    """
+    Get revenue by department from SQL Server.
+    Optionally includes benchmark period for comparison.
+    
+    Query params:
+        start_date, end_date: Current period (YYYY-MM-DD)
+        benchmark_start, benchmark_end: Benchmark period (optional, YYYY-MM-DD)
+    """
     start_date = request.args.get('start_date', datetime.now().strftime('%Y-%m-%d'))
     end_date = request.args.get('end_date', datetime.now().strftime('%Y-%m-%d'))
+    benchmark_start = request.args.get('benchmark_start', '')
+    benchmark_end = request.args.get('benchmark_end', '')
+
+    base_query = """
+        SELECT 
+            Department,
+            SUM(TotalExclVAT) as total_revenue
+        FROM dbo.SQL_PlecTo
+        WHERE CAST(Date AS DATE) >= ?
+          AND CAST(Date AS DATE) <= ?
+          AND SalesType = 'PosSale'
+          AND (ItemGroupText NOT LIKE '%Gavekort%' 
+               AND ItemGroupText NOT LIKE '%GiftUp%'
+               AND ItemGroupText NOT LIKE '%Reklamationer%')
+        GROUP BY Department
+        ORDER BY Department
+    """
 
     conn = None
     try:
         conn = get_sql_connection()
         cursor = conn.cursor()
 
-        query = """
-            SELECT 
-                Department,
-                SUM(TotalExclVAT) as total_revenue
-            FROM dbo.SQL_PlecTo
-            WHERE CAST(Date AS DATE) >= ?
-              AND CAST(Date AS DATE) <= ?
-              AND SalesType = 'PosSale'
-              AND (ItemGroupText NOT LIKE '%Gavekort%' 
-                   AND ItemGroupText NOT LIKE '%GiftUp%'
-                   AND ItemGroupText NOT LIKE '%Reklamationer%')
-            GROUP BY Department
-            ORDER BY Department
-        """
-        cursor.execute(query, start_date, end_date)
-        rows = cursor.fetchall()
+        # Current period
+        cursor.execute(base_query, start_date, end_date)
+        current_rows = cursor.fetchall()
+        current_map = {}
+        for row in current_rows:
+            current_map[row[0]] = float(row[1]) if row[1] else 0
 
+        # Benchmark period (if provided)
+        benchmark_map = {}
+        if benchmark_start and benchmark_end:
+            cursor.execute(base_query, benchmark_start, benchmark_end)
+            benchmark_rows = cursor.fetchall()
+            for row in benchmark_rows:
+                benchmark_map[row[0]] = float(row[1]) if row[1] else 0
+
+        # Combine results
+        all_departments = sorted(set(list(current_map.keys()) + list(benchmark_map.keys())))
         results = []
-        for row in rows:
-            results.append({
-                'department': row[0],
-                'total_revenue': float(row[1]) if row[1] else 0
-            })
+        for dept in all_departments:
+            current_rev = current_map.get(dept, 0)
+            benchmark_rev = benchmark_map.get(dept, 0)
+            change_percent = ((current_rev - benchmark_rev) / benchmark_rev * 100) if benchmark_rev else 0
 
-        return jsonify({'data': results, 'start_date': start_date, 'end_date': end_date})
+            entry = {
+                'department': dept,
+                'current_revenue': round(current_rev, 2),
+            }
+            if benchmark_start and benchmark_end:
+                entry['benchmark_revenue'] = round(benchmark_rev, 2)
+                entry['change_percent'] = round(change_percent, 2)
+
+            results.append(entry)
+
+        return jsonify({
+            'data': results,
+            'start_date': start_date,
+            'end_date': end_date,
+            'benchmark_start': benchmark_start or None,
+            'benchmark_end': benchmark_end or None,
+        })
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
