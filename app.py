@@ -310,42 +310,77 @@ def pax_live():
 
 @app.route('/api/pax/by-department', methods=['GET'])
 def pax_by_department():
-    """Get PAX by department from Snowflake (historical data, updated hourly)."""
+    """
+    Get PAX by department from Snowflake (historical data, updated hourly).
+    Optionally includes benchmark period for comparison.
+    
+    Query params:
+        start_date, end_date: Current period (YYYY-MM-DD)
+        benchmark_start, benchmark_end: Benchmark period (optional, YYYY-MM-DD)
+    """
     start_date = request.args.get('start_date', datetime.now().strftime('%Y-%m-%d'))
     end_date = request.args.get('end_date', datetime.now().strftime('%Y-%m-%d'))
+    benchmark_start = request.args.get('benchmark_start', '')
+    benchmark_end = request.args.get('benchmark_end', '')
+
+    base_query = """
+        SELECT 
+            r.NAME as department,
+            SUM(b.RESTAURANTBOOKING_B_PAX) as total_pax
+        FROM DINNERBOOKING.PYTHON_IMPORT.BOOKINGS b
+        JOIN DINNERBOOKING.PYTHON_IMPORT.RESTAURANTS r 
+            ON b.RESTAURANT_ID = r.ID
+        WHERE CAST(b.RESTAURANTBOOKING_B_DATE_TIME AS DATE) >= %s
+          AND CAST(b.RESTAURANTBOOKING_B_DATE_TIME AS DATE) <= %s
+          AND b.RESTAURANTBOOKING_B_STATUS = 'current'
+        GROUP BY r.NAME
+        ORDER BY r.NAME
+    """
 
     conn = None
     try:
         conn = get_snowflake_connection('DINNERBOOKING')
         cursor = conn.cursor()
 
-        query = """
-            SELECT 
-                r.NAME as department,
-                SUM(b.RESTAURANTBOOKING_B_PAX) as total_pax
-            FROM DINNERBOOKING.PYTHON_IMPORT.BOOKINGS b
-            JOIN DINNERBOOKING.PYTHON_IMPORT.RESTAURANTS r 
-                ON b.RESTAURANT_ID = r.ID
-            WHERE CAST(b.RESTAURANTBOOKING_B_DATE_TIME AS DATE) >= %s
-              AND CAST(b.RESTAURANTBOOKING_B_DATE_TIME AS DATE) <= %s
-              AND b.RESTAURANTBOOKING_B_STATUS = 'current'
-            GROUP BY r.NAME
-            ORDER BY r.NAME
-        """
-        cursor.execute(query, (start_date, end_date))
-        rows = cursor.fetchall()
+        # Current period
+        cursor.execute(base_query, (start_date, end_date))
+        current_rows = cursor.fetchall()
+        current_map = {}
+        for row in current_rows:
+            current_map[row[0]] = int(row[1]) if row[1] else 0
 
+        # Benchmark period (if provided)
+        benchmark_map = {}
+        if benchmark_start and benchmark_end:
+            cursor.execute(base_query, (benchmark_start, benchmark_end))
+            benchmark_rows = cursor.fetchall()
+            for row in benchmark_rows:
+                benchmark_map[row[0]] = int(row[1]) if row[1] else 0
+
+        # Combine results
+        all_departments = sorted(set(list(current_map.keys()) + list(benchmark_map.keys())))
         results = []
-        for row in rows:
-            results.append({
-                'department': row[0],
-                'total_pax': int(row[1]) if row[1] else 0
-            })
+        for dept in all_departments:
+            current_pax = current_map.get(dept, 0)
+            benchmark_pax = benchmark_map.get(dept, 0)
+            change_percent = ((current_pax - benchmark_pax) / benchmark_pax * 100) if benchmark_pax else 0
+
+            entry = {
+                'department': dept,
+                'current_pax': current_pax,
+            }
+            if benchmark_start and benchmark_end:
+                entry['benchmark_pax'] = benchmark_pax
+                entry['change_percent'] = round(change_percent, 2)
+
+            results.append(entry)
 
         return jsonify({
             'data': results,
             'start_date': start_date,
             'end_date': end_date,
+            'benchmark_start': benchmark_start or None,
+            'benchmark_end': benchmark_end or None,
             'source': 'Snowflake (hourly update)',
         })
 
