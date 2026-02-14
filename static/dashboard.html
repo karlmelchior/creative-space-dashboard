@@ -56,7 +56,7 @@
             display: flex;
             align-items: baseline;
             justify-content: space-between;
-            margin-bottom: 40px;
+            margin-bottom: 16px;
             padding-bottom: 24px;
             border-bottom: 1px solid var(--border);
         }
@@ -73,9 +73,46 @@
             color: var(--text-muted);
         }
 
+        /* Department header for location logins */
+        .dept-header {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text);
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 3px solid var(--accent);
+            display: none;
+        }
+
+        /* Category groups */
+        .category {
+            margin-bottom: 48px;
+        }
+
+        .category-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--accent);
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .category-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
         /* Sections */
         .section {
-            margin-bottom: 48px;
+            margin-bottom: 40px;
         }
 
         .section-header {
@@ -116,19 +153,19 @@
             letter-spacing: 0.06em;
         }
 
-        input[type="date"] {
+        input[type="date"], select.filter-select {
             background: var(--surface);
             border: 1px solid var(--border);
             color: var(--text);
             padding: 6px 10px;
             border-radius: 6px;
-            font-family: 'GT Haptik', sans-serif;
+            font-family: 'GT Haptik', 'DM Sans', sans-serif;
             font-size: 13px;
             outline: none;
             transition: border-color 0.2s;
         }
 
-        input[type="date"]:focus {
+        input[type="date"]:focus, select.filter-select:focus {
             border-color: var(--accent);
         }
 
@@ -136,17 +173,49 @@
             filter: invert(0.7);
         }
 
+        /* Shortcut buttons */
+        .shortcut-btn {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-family: 'GT Haptik', 'DM Sans', sans-serif;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.15s;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+        }
+
+        .shortcut-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .shortcut-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
         /* Tables */
         .table-wrapper {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 10px;
-            overflow: hidden;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
+            min-width: 500px;
+        }
+
+        table.wide-table {
+            min-width: 800px;
         }
 
         th {
@@ -161,6 +230,7 @@
             background: var(--surface);
             position: sticky;
             top: 0;
+            white-space: nowrap;
         }
 
         th.num { text-align: right; }
@@ -170,6 +240,7 @@
             font-size: 14px;
             border-bottom: 1px solid #eee;
             font-variant-numeric: tabular-nums;
+            white-space: nowrap;
         }
 
         td.num { text-align: right; font-weight: 500; }
@@ -277,20 +348,6 @@
             text-align: center;
         }
 
-        /* Grid layout */
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-        }
-
-        @media (max-width: 900px) {
-            .grid-2 { grid-template-columns: 1fr; }
-            .stats-bar { flex-direction: column; }
-            .stat-card:first-child { border-radius: 10px 10px 0 0; }
-            .stat-card:last-child { border-radius: 0 0 10px 10px; }
-        }
-
         /* Refresh button */
         .btn-refresh {
             background: var(--surface);
@@ -298,7 +355,7 @@
             color: var(--text-muted);
             padding: 6px 14px;
             border-radius: 6px;
-            font-family: 'GT Haptik', sans-serif;
+            font-family: 'GT Haptik', 'DM Sans', sans-serif;
             font-size: 12px;
             cursor: pointer;
             transition: all 0.2s;
@@ -308,11 +365,6 @@
         .btn-refresh:hover {
             border-color: var(--accent);
             color: var(--text);
-        }
-
-        .btn-refresh.loading-btn {
-            opacity: 0.5;
-            pointer-events: none;
         }
 
         /* Fade in animation */
@@ -331,6 +383,36 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+
+        /* Sickness cell coloring */
+        .sick-zero { color: #ccc; }
+        .sick-high { color: var(--red); font-weight: 600; }
+
+        .col-total {
+            border-left: 2px solid var(--border);
+            font-weight: 600;
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 900px) {
+            .dashboard { padding: 20px 12px; }
+            .stats-bar { flex-direction: column; }
+            .stat-card { padding: 14px 16px; }
+            .stat-card:first-child { border-radius: 10px 10px 0 0; }
+            .stat-card:last-child { border-radius: 0 0 10px 10px; }
+            .stat-value { font-size: 20px; }
+            .section-header { flex-direction: column; align-items: flex-start; }
+            .date-controls { width: 100%; }
+            .dept-header { font-size: 22px; }
+            header h1 { font-size: 18px; }
+            td, th { padding: 10px 10px; font-size: 13px; }
+        }
+
+        @media (max-width: 600px) {
+            .date-group { flex-wrap: wrap; }
+            input[type="date"] { max-width: 130px; font-size: 12px; }
+            select.filter-select { font-size: 12px; }
+        }
     </style>
 </head>
 <body>
@@ -340,122 +422,209 @@
             <span class="timestamp" id="lastUpdate"></span>
         </header>
 
-        <!-- PAX I DAG -->
-        <div class="section">
-            <div class="section-header">
-                <span class="section-title">PAX i dag &mdash; <span id="todayDate"></span></span>
-                <button class="btn-refresh" onclick="loadPaxToday()">Opdater live</button>
+        <!-- Department header (shown for location logins) -->
+        <div class="dept-header" id="deptHeader"></div>
+
+        <!-- ============================================ -->
+        <!-- DAGLIG DRIFT                                 -->
+        <!-- ============================================ -->
+        <div class="category">
+            <div class="category-title">Daglig drift</div>
+
+            <!-- PAX I DAG -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-title">PAX i dag &mdash; <span id="todayDate"></span></span>
+                    <button class="btn-refresh" onclick="loadPaxToday()">Opdater live</button>
+                </div>
+                <div id="paxTodayContent">
+                    <div class="loading"><div class="spinner"></div>Henter live PAX...</div>
+                </div>
             </div>
-            <div id="paxTodayContent">
-                <div class="loading"><div class="spinner"></div>Henter live PAX...</div>
+
+            <!-- LØN VS OMSÆTNING DAGLIGT -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-title">Løn vs. omsætning</span>
+                    <div class="date-controls">
+                        <button class="shortcut-btn active" onclick="setLaborShortcut('week', this)">Denne uge</button>
+                        <button class="shortcut-btn" onclick="setLaborShortcut('month', this)">Denne måned</button>
+                        <div class="date-group">
+                            <label>Fra</label>
+                            <input type="date" id="laborStart">
+                        </div>
+                        <div class="date-group">
+                            <label>Til</label>
+                            <input type="date" id="laborEnd">
+                        </div>
+                        <div class="date-group" id="laborDeptGroup">
+                            <label>Butik</label>
+                            <select id="laborDept" class="filter-select">
+                                <option value="all">Alle</option>
+                                <option value="Creative Space Aarhus">Aarhus</option>
+                                <option value="Creative Space Frederiksberg">Frederiksberg</option>
+                                <option value="Creative Space Lyngby">Lyngby</option>
+                                <option value="Creative Space Odense">Odense</option>
+                                <option value="Creative Space Østerbro">Østerbro</option>
+                                <option value="Creative Space Vejle">Vejle</option>
+                            </select>
+                        </div>
+                        <button class="btn-refresh" onclick="loadLaborDaily()">Hent</button>
+                    </div>
+                </div>
+                <div id="laborDailyContent">
+                    <div class="loading"><div class="spinner"></div>Henter løn og omsætning...</div>
+                </div>
             </div>
         </div>
 
-        <!-- OMSÆTNING -->
-        <div class="section">
-            <div class="section-header">
-                <span class="section-title">Omsætning ex. moms</span>
-                <div class="date-controls">
-                    <div class="date-group">
-                        <label>Periode</label>
-                        <input type="date" id="revStart">
-                        <input type="date" id="revEnd">
+        <!-- ============================================ -->
+        <!-- PERFORMANCE                                  -->
+        <!-- ============================================ -->
+        <div class="category">
+            <div class="category-title">Performance</div>
+
+            <!-- OMSÆTNING -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-title">Omsætning ex. moms</span>
+                    <div class="date-controls">
+                        <button class="shortcut-btn active" onclick="setRevenueShortcut('week', this)">Denne uge</button>
+                        <button class="shortcut-btn" onclick="setRevenueShortcut('month', this)">Denne måned</button>
+                        <div class="date-group">
+                            <label>Periode</label>
+                            <input type="date" id="revStart">
+                            <input type="date" id="revEnd">
+                        </div>
+                        <div class="date-group">
+                            <label>Benchmark</label>
+                            <input type="date" id="revBenchStart">
+                            <input type="date" id="revBenchEnd">
+                        </div>
+                        <button class="btn-refresh" onclick="loadRevenue()">Hent</button>
                     </div>
-                    <div class="date-group">
-                        <label>Benchmark</label>
-                        <input type="date" id="revBenchStart">
-                        <input type="date" id="revBenchEnd">
-                    </div>
-                    <button class="btn-refresh" onclick="loadRevenue()">Hent</button>
+                </div>
+                <div id="revenueStats"></div>
+                <div id="revenueContent">
+                    <div class="loading"><div class="spinner"></div>Henter omsætning...</div>
                 </div>
             </div>
-            <div id="revenueStats"></div>
-            <div id="revenueContent">
-                <div class="loading"><div class="spinner"></div>Henter omsætning...</div>
+
+            <!-- PAX BENCHMARK -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-title">PAX sammenlignet</span>
+                    <div class="date-controls">
+                        <button class="shortcut-btn active" onclick="setPaxShortcut('week', this)">Denne uge</button>
+                        <button class="shortcut-btn" onclick="setPaxShortcut('month', this)">Denne måned</button>
+                        <div class="date-group">
+                            <label>Periode</label>
+                            <input type="date" id="paxStart">
+                            <input type="date" id="paxEnd">
+                        </div>
+                        <div class="date-group">
+                            <label>Benchmark</label>
+                            <input type="date" id="paxBenchStart">
+                            <input type="date" id="paxBenchEnd">
+                        </div>
+                        <button class="btn-refresh" onclick="loadPaxBenchmark()">Hent</button>
+                    </div>
+                </div>
+                <div id="paxBenchmarkContent">
+                    <div class="loading"><div class="spinner"></div>Henter PAX...</div>
+                </div>
+            </div>
+
+            <!-- OMSÆTNING VS PAX -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-title">Omsætning vs. PAX</span>
+                    <div class="date-controls">
+                        <button class="shortcut-btn active" onclick="setTicketShortcut('week', this)">Denne uge</button>
+                        <button class="shortcut-btn" onclick="setTicketShortcut('month', this)">Denne måned</button>
+                        <div class="date-group">
+                            <label>Periode</label>
+                            <input type="date" id="ticketStart">
+                            <input type="date" id="ticketEnd">
+                        </div>
+                        <div class="date-group">
+                            <label>Benchmark</label>
+                            <input type="date" id="ticketBenchStart">
+                            <input type="date" id="ticketBenchEnd">
+                        </div>
+                        <button class="btn-refresh" onclick="loadTicketSize()">Hent</button>
+                    </div>
+                </div>
+                <div id="ticketSizeContent">
+                    <div class="loading"><div class="spinner"></div>Henter omsætning vs. PAX...</div>
+                </div>
             </div>
         </div>
 
-        <!-- PAX BENCHMARK -->
-        <div class="section">
-            <div class="section-header">
-                <span class="section-title">PAX sammenlignet</span>
-                <div class="date-controls">
-                    <div class="date-group">
-                        <label>Periode</label>
-                        <input type="date" id="paxStart">
-                        <input type="date" id="paxEnd">
-                    </div>
-                    <div class="date-group">
-                        <label>Benchmark</label>
-                        <input type="date" id="paxBenchStart">
-                        <input type="date" id="paxBenchEnd">
-                    </div>
-                    <button class="btn-refresh" onclick="loadPaxBenchmark()">Hent</button>
-                </div>
-            </div>
-            <div id="paxBenchmarkContent">
-                <div class="loading"><div class="spinner"></div>Henter PAX...</div>
-            </div>
-        </div>
+        <!-- ============================================ -->
+        <!-- MEDARBEJDERE                                 -->
+        <!-- ============================================ -->
+        <div class="category">
+            <div class="category-title">Medarbejdere</div>
 
-        <!-- OMSÆTNING VS PAX -->
-        <div class="section">
-            <div class="section-header">
-                <span class="section-title">Omsætning vs. PAX</span>
-                <div class="date-controls">
-                    <div class="date-group">
-                        <label>Periode</label>
-                        <input type="date" id="ticketStart">
-                        <input type="date" id="ticketEnd">
+            <!-- SYGDOM -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-title">Sygdom</span>
+                    <div class="date-controls">
+                        <div class="date-group">
+                            <label>År</label>
+                            <select id="sicknessYear" class="filter-select"></select>
+                        </div>
+                        <div class="date-group" id="sicknessDeptGroup">
+                            <label>Butik</label>
+                            <select id="sicknessDept" class="filter-select">
+                                <option value="all">Alle</option>
+                                <option value="Creative Space Aarhus">Aarhus</option>
+                                <option value="Creative Space Frederiksberg">Frederiksberg</option>
+                                <option value="Creative Space Lyngby">Lyngby</option>
+                                <option value="Creative Space Odense">Odense</option>
+                                <option value="Creative Space Østerbro">Østerbro</option>
+                                <option value="Creative Space Vejle">Vejle</option>
+                            </select>
+                        </div>
+                        <div class="date-group">
+                            <label>Funktion</label>
+                            <select id="sicknessGroup" class="filter-select">
+                                <option value="all">Alle</option>
+                                <option value="257760">Butiksansat</option>
+                                <option value="263440">Butiksansat forts.</option>
+                                <option value="257761">Butiksansat u18</option>
+                                <option value="262424">Butiksbestyrer</option>
+                                <option value="262773">Glaserer Århus</option>
+                                <option value="262775">Glaserer København</option>
+                                <option value="262774">Glaserer Odense</option>
+                                <option value="263263">Glaserer Vejle</option>
+                                <option value="262794">Lager</option>
+                                <option value="258869">Prøvevagt</option>
+                                <option value="262910">Sæson Ninja</option>
+                                <option value="262423">Teamleder</option>
+                                <option value="263340">Træner</option>
+                            </select>
+                        </div>
+                        <button class="btn-refresh" onclick="loadSickness()">Hent</button>
                     </div>
-                    <div class="date-group">
-                        <label>Benchmark</label>
-                        <input type="date" id="ticketBenchStart">
-                        <input type="date" id="ticketBenchEnd">
-                    </div>
-                    <button class="btn-refresh" onclick="loadTicketSize()">Hent</button>
                 </div>
-            </div>
-            <div id="ticketSizeContent">
-                <div class="loading"><div class="spinner"></div>Henter omsætning vs. PAX...</div>
-            </div>
-        </div>
-
-        <!-- LØN VS OMSÆTNING DAGLIGT -->
-        <div class="section">
-            <div class="section-header">
-                <span class="section-title">Løn vs. omsætning</span>
-                <div class="date-controls">
-                    <div class="date-group">
-                        <label>Periode</label>
-                        <input type="date" id="laborStart">
-                        <input type="date" id="laborEnd">
-                    </div>
-                    <div class="date-group">
-                        <label>Butik</label>
-                        <select id="laborDept" style="background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;">
-                            <option value="all">Alle</option>
-                            <option value="Creative Space Aarhus">Aarhus</option>
-                            <option value="Creative Space Frederiksberg">Frederiksberg</option>
-                            <option value="Creative Space Lyngby">Lyngby</option>
-                            <option value="Creative Space Odense">Odense</option>
-                            <option value="Creative Space Østerbro">Østerbro</option>
-                            <option value="Creative Space Vejle">Vejle</option>
-                        </select>
-                    </div>
-                    <button class="btn-refresh" onclick="loadLaborDaily()">Hent</button>
+                <div id="sicknessStats"></div>
+                <div id="sicknessContent">
+                    <div class="loading"><div class="spinner"></div>Henter sygdomsdata...</div>
                 </div>
-            </div>
-            <div id="laborDailyContent">
-                <div class="loading"><div class="spinner"></div>Henter løn og omsætning...</div>
             </div>
         </div>
     </div>
 
     <script>
         const API = 'https://web-production-bf4c.up.railway.app';
+        const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'Maj', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
+        const MONTH_NAMES_LONG = ['Januar', 'Februar', 'Marts', 'April', 'Maj', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'December'];
 
-        // Date helpers
+        // ===================== DATE HELPERS =====================
+
         function today() {
             return new Date().toISOString().split('T')[0];
         }
@@ -464,7 +633,24 @@
             const d = new Date();
             const day = d.getDay();
             const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-            return new Date(d.setDate(diff)).toISOString().split('T')[0];
+            return new Date(d.getFullYear(), d.getMonth(), diff).toISOString().split('T')[0];
+        }
+
+        function sundayThisWeek() {
+            const d = new Date();
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? 0 : 7);
+            return new Date(d.getFullYear(), d.getMonth(), diff).toISOString().split('T')[0];
+        }
+
+        function firstDayThisMonth() {
+            const d = new Date();
+            return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
+        }
+
+        function lastDayThisMonth() {
+            const d = new Date();
+            return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split('T')[0];
         }
 
         function sameDayLastYear(dateStr) {
@@ -472,6 +658,8 @@
             d.setFullYear(d.getFullYear() - 1);
             return d.toISOString().split('T')[0];
         }
+
+        // ===================== FORMAT HELPERS =====================
 
         function formatNum(n) {
             if (n == null) return '—';
@@ -500,27 +688,110 @@
             return name.replace('Creative Space ', '');
         }
 
-        // Set default dates
-        function initDates() {
-            const mon = mondayThisWeek();
-            const tod = today();
-            const monLY = sameDayLastYear(mon);
-            const todLY = sameDayLastYear(tod);
+        // ===================== SHORTCUT BUTTONS =====================
 
-            document.getElementById('revStart').value = mon;
-            document.getElementById('revEnd').value = tod;
-            document.getElementById('revBenchStart').value = monLY;
-            document.getElementById('revBenchEnd').value = todLY;
-
-            document.getElementById('paxStart').value = mon;
-            document.getElementById('paxEnd').value = tod;
-            document.getElementById('paxBenchStart').value = monLY;
-            document.getElementById('paxBenchEnd').value = todLY;
-
-            document.getElementById('todayDate').textContent = new Date().toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        function activateShortcut(btn) {
+            const siblings = btn.parentElement.querySelectorAll('.shortcut-btn');
+            siblings.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
         }
 
-        // PAX TODAY
+        function setWeekDates(startId, endId, benchStartId, benchEndId) {
+            const mon = mondayThisWeek();
+            const sun = sundayThisWeek();
+            document.getElementById(startId).value = mon;
+            document.getElementById(endId).value = sun;
+            if (benchStartId) {
+                document.getElementById(benchStartId).value = sameDayLastYear(mon);
+                document.getElementById(benchEndId).value = sameDayLastYear(sun);
+            }
+        }
+
+        function setMonthDates(startId, endId, benchStartId, benchEndId) {
+            const first = firstDayThisMonth();
+            const last = lastDayThisMonth();
+            document.getElementById(startId).value = first;
+            document.getElementById(endId).value = last;
+            if (benchStartId) {
+                document.getElementById(benchStartId).value = sameDayLastYear(first);
+                document.getElementById(benchEndId).value = sameDayLastYear(last);
+            }
+        }
+
+        function setRevenueShortcut(type, btn) {
+            activateShortcut(btn);
+            if (type === 'week') setWeekDates('revStart', 'revEnd', 'revBenchStart', 'revBenchEnd');
+            else setMonthDates('revStart', 'revEnd', 'revBenchStart', 'revBenchEnd');
+            loadRevenue();
+        }
+
+        function setPaxShortcut(type, btn) {
+            activateShortcut(btn);
+            if (type === 'week') setWeekDates('paxStart', 'paxEnd', 'paxBenchStart', 'paxBenchEnd');
+            else setMonthDates('paxStart', 'paxEnd', 'paxBenchStart', 'paxBenchEnd');
+            loadPaxBenchmark();
+        }
+
+        function setTicketShortcut(type, btn) {
+            activateShortcut(btn);
+            if (type === 'week') setWeekDates('ticketStart', 'ticketEnd', 'ticketBenchStart', 'ticketBenchEnd');
+            else setMonthDates('ticketStart', 'ticketEnd', 'ticketBenchStart', 'ticketBenchEnd');
+            loadTicketSize();
+        }
+
+        function setLaborShortcut(type, btn) {
+            activateShortcut(btn);
+            if (type === 'week') {
+                document.getElementById('laborStart').value = mondayThisWeek();
+                document.getElementById('laborEnd').value = sundayThisWeek();
+            } else {
+                document.getElementById('laborStart').value = firstDayThisMonth();
+                document.getElementById('laborEnd').value = lastDayThisMonth();
+            }
+            loadLaborDaily();
+        }
+
+        // ===================== DEFAULT DATES =====================
+
+        function initDates() {
+            const mon = mondayThisWeek();
+            const sun = sundayThisWeek();
+            const monLY = sameDayLastYear(mon);
+            const sunLY = sameDayLastYear(sun);
+
+            document.getElementById('revStart').value = mon;
+            document.getElementById('revEnd').value = sun;
+            document.getElementById('revBenchStart').value = monLY;
+            document.getElementById('revBenchEnd').value = sunLY;
+
+            document.getElementById('paxStart').value = mon;
+            document.getElementById('paxEnd').value = sun;
+            document.getElementById('paxBenchStart').value = monLY;
+            document.getElementById('paxBenchEnd').value = sunLY;
+
+            document.getElementById('ticketStart').value = mon;
+            document.getElementById('ticketEnd').value = sun;
+            document.getElementById('ticketBenchStart').value = monLY;
+            document.getElementById('ticketBenchEnd').value = sunLY;
+
+            document.getElementById('laborStart').value = mon;
+            document.getElementById('laborEnd').value = sun;
+
+            document.getElementById('todayDate').textContent = new Date().toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+            // Sickness year dropdown
+            const yearSelect = document.getElementById('sicknessYear');
+            const currentYear = new Date().getFullYear();
+            for (let y = currentYear; y >= 2020; y--) {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.textContent = y;
+                yearSelect.appendChild(opt);
+            }
+        }
+
+        // ===================== PAX TODAY =====================
+
         async function loadPaxToday() {
             const el = document.getElementById('paxTodayContent');
             el.innerHTML = '<div class="loading"><div class="spinner"></div>Henter live PAX fra DinnerBooking...</div>';
@@ -571,26 +842,10 @@
                 `;
 
                 for (const r of data.sort((a, b) => b.pax - a.pax)) {
-                    html += `
-                        <tr>
-                            <td class="dept-name">${shortDept(r.department)}</td>
-                            <td class="num">${formatNum(r.pax)}</td>
-                            <td class="num">${formatNum(r.bookings)}</td>
-                        </tr>
-                    `;
+                    html += `<tr><td class="dept-name">${shortDept(r.department)}</td><td class="num">${formatNum(r.pax)}</td><td class="num">${formatNum(r.bookings)}</td></tr>`;
                 }
 
-                html += `
-                            <tr class="summary-row">
-                                <td><strong>Total</strong></td>
-                                <td class="num">${formatNum(totalPax)}</td>
-                                <td class="num">${formatNum(totalBookings)}</td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-
+                html += `<tr class="summary-row"><td><strong>Total</strong></td><td class="num">${formatNum(totalPax)}</td><td class="num">${formatNum(totalBookings)}</td></tr></tbody></table></div>`;
                 el.innerHTML = html;
                 document.getElementById('lastUpdate').textContent = 'Sidst opdateret: ' + new Date().toLocaleTimeString('da-DK');
 
@@ -599,7 +854,8 @@
             }
         }
 
-        // REVENUE
+        // ===================== REVENUE =====================
+
         async function loadRevenue() {
             const el = document.getElementById('revenueContent');
             const statsEl = document.getElementById('revenueStats');
@@ -616,7 +872,6 @@
             try {
                 const res = await fetch(`${API}/api/revenue/by-department?${params}`);
                 const json = await res.json();
-
                 if (json.error) throw new Error(json.error);
 
                 let data = json.data;
@@ -624,78 +879,29 @@
                     data = data.filter(r => r.department === userDepartment);
                 }
                 const hasBenchmark = data.length > 0 && data[0].benchmark_revenue !== undefined;
-
                 const totalCurrent = data.reduce((s, r) => s + (r.current_revenue || 0), 0);
                 const totalBenchmark = hasBenchmark ? data.reduce((s, r) => s + (r.benchmark_revenue || 0), 0) : null;
                 const totalChange = totalBenchmark ? ((totalCurrent - totalBenchmark) / totalBenchmark * 100) : null;
 
                 statsEl.innerHTML = `
                     <div class="stats-bar fade-in">
-                        <div class="stat-card">
-                            <div class="stat-label">Periode</div>
-                            <div class="stat-value">${formatCurrency(totalCurrent)}</div>
-                        </div>
-                        ${hasBenchmark ? `
-                        <div class="stat-card">
-                            <div class="stat-label">Benchmark</div>
-                            <div class="stat-value">${formatCurrency(totalBenchmark)}</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Ændring</div>
-                            <div class="stat-value">${changeTag(totalChange, true)}</div>
-                        </div>
-                        ` : ''}
-                    </div>
-                `;
+                        <div class="stat-card"><div class="stat-label">Periode</div><div class="stat-value">${formatCurrency(totalCurrent)}</div></div>
+                        ${hasBenchmark ? `<div class="stat-card"><div class="stat-label">Benchmark</div><div class="stat-value">${formatCurrency(totalBenchmark)}</div></div>
+                        <div class="stat-card"><div class="stat-label">Ændring</div><div class="stat-value">${changeTag(totalChange, true)}</div></div>` : ''}
+                    </div>`;
 
-                let html = `
-                    <div class="table-wrapper fade-in">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Restaurant</th>
-                                    <th class="num">Periode</th>
-                                    ${hasBenchmark ? '<th class="num">Benchmark</th><th class="num">Ændring</th>' : ''}
-                                </tr>
-                            </thead>
-                            <tbody>
-                `;
-
+                let html = `<div class="table-wrapper fade-in"><table><thead><tr><th>Restaurant</th><th class="num">Periode</th>${hasBenchmark ? '<th class="num">Benchmark</th><th class="num">Ændring</th>' : ''}</tr></thead><tbody>`;
                 for (const r of data) {
-                    html += `
-                        <tr>
-                            <td class="dept-name">${r.department}</td>
-                            <td class="num">${formatCurrency(r.current_revenue)}</td>
-                            ${hasBenchmark ? `
-                                <td class="num">${formatCurrency(r.benchmark_revenue)}</td>
-                                <td class="num">${changeTag(r.change_percent, true)}</td>
-                            ` : ''}
-                        </tr>
-                    `;
+                    html += `<tr><td class="dept-name">${r.department}</td><td class="num">${formatCurrency(r.current_revenue)}</td>${hasBenchmark ? `<td class="num">${formatCurrency(r.benchmark_revenue)}</td><td class="num">${changeTag(r.change_percent, true)}</td>` : ''}</tr>`;
                 }
-
-                html += `
-                        <tr class="summary-row">
-                            <td><strong>Total</strong></td>
-                            <td class="num">${formatCurrency(totalCurrent)}</td>
-                            ${hasBenchmark ? `
-                                <td class="num">${formatCurrency(totalBenchmark)}</td>
-                                <td class="num">${changeTag(totalChange, true)}</td>
-                            ` : ''}
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-                `;
-
+                html += `<tr class="summary-row"><td><strong>Total</strong></td><td class="num">${formatCurrency(totalCurrent)}</td>${hasBenchmark ? `<td class="num">${formatCurrency(totalBenchmark)}</td><td class="num">${changeTag(totalChange, true)}</td>` : ''}</tr></tbody></table></div>`;
                 el.innerHTML = html;
 
-            } catch (e) {
-                el.innerHTML = `<div class="error-msg">Fejl: ${e.message}</div>`;
-            }
+            } catch (e) { el.innerHTML = `<div class="error-msg">Fejl: ${e.message}</div>`; }
         }
 
-        // PAX BENCHMARK
+        // ===================== PAX BENCHMARK =====================
+
         async function loadPaxBenchmark() {
             const el = document.getElementById('paxBenchmarkContent');
             el.innerHTML = '<div class="loading"><div class="spinner"></div>Henter PAX fra Snowflake...</div>';
@@ -710,7 +916,6 @@
             try {
                 const res = await fetch(`${API}/api/pax/by-department?${params}`);
                 const json = await res.json();
-
                 if (json.error) throw new Error(json.error);
 
                 let data = json.data;
@@ -718,75 +923,30 @@
                     data = data.filter(r => r.department === userDepartment);
                 }
                 const hasBenchmark = data.length > 0 && data[0].benchmark_pax !== undefined;
-
                 const totalCurrent = data.reduce((s, r) => s + (r.current_pax || 0), 0);
                 const totalBenchmark = hasBenchmark ? data.reduce((s, r) => s + (r.benchmark_pax || 0), 0) : null;
                 const totalChange = hasBenchmark ? (totalCurrent - totalBenchmark) : null;
 
                 let html = `
                     <div class="stats-bar fade-in">
-                        <div class="stat-card">
-                            <div class="stat-label">Periode PAX</div>
-                            <div class="stat-value">${formatNum(totalCurrent)}</div>
-                        </div>
-                        ${hasBenchmark ? `
-                        <div class="stat-card">
-                            <div class="stat-label">Benchmark PAX</div>
-                            <div class="stat-value">${formatNum(totalBenchmark)}</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Forskel</div>
-                            <div class="stat-value">${changeTag(totalChange)}</div>
-                        </div>
-                        ` : ''}
+                        <div class="stat-card"><div class="stat-label">Periode PAX</div><div class="stat-value">${formatNum(totalCurrent)}</div></div>
+                        ${hasBenchmark ? `<div class="stat-card"><div class="stat-label">Benchmark PAX</div><div class="stat-value">${formatNum(totalBenchmark)}</div></div>
+                        <div class="stat-card"><div class="stat-label">Forskel</div><div class="stat-value">${changeTag(totalChange)}</div></div>` : ''}
                     </div>
-                    <div class="table-wrapper fade-in">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Restaurant</th>
-                                    <th class="num">Periode</th>
-                                    ${hasBenchmark ? '<th class="num">Benchmark</th><th class="num">Forskel</th>' : ''}
-                                </tr>
-                            </thead>
-                            <tbody>
-                `;
+                    <div class="table-wrapper fade-in"><table><thead><tr><th>Restaurant</th><th class="num">Periode</th>${hasBenchmark ? '<th class="num">Benchmark</th><th class="num">Forskel</th>' : ''}</tr></thead><tbody>`;
 
                 for (const r of data) {
-                    html += `
-                        <tr>
-                            <td class="dept-name">${shortDept(r.department)}</td>
-                            <td class="num">${formatNum(r.current_pax)}</td>
-                            ${hasBenchmark ? `
-                                <td class="num">${formatNum(r.benchmark_pax)}</td>
-                                <td class="num">${changeTag(r.change)}</td>
-                            ` : ''}
-                        </tr>
-                    `;
+                    html += `<tr><td class="dept-name">${shortDept(r.department)}</td><td class="num">${formatNum(r.current_pax)}</td>${hasBenchmark ? `<td class="num">${formatNum(r.benchmark_pax)}</td><td class="num">${changeTag(r.change)}</td>` : ''}</tr>`;
                 }
 
-                html += `
-                        <tr class="summary-row">
-                            <td><strong>Total</strong></td>
-                            <td class="num">${formatNum(totalCurrent)}</td>
-                            ${hasBenchmark ? `
-                                <td class="num">${formatNum(totalBenchmark)}</td>
-                                <td class="num">${changeTag(totalChange)}</td>
-                            ` : ''}
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-                `;
-
+                html += `<tr class="summary-row"><td><strong>Total</strong></td><td class="num">${formatNum(totalCurrent)}</td>${hasBenchmark ? `<td class="num">${formatNum(totalBenchmark)}</td><td class="num">${changeTag(totalChange)}</td>` : ''}</tr></tbody></table></div>`;
                 el.innerHTML = html;
 
-            } catch (e) {
-                el.innerHTML = `<div class="error-msg">Fejl: ${e.message}</div>`;
-            }
+            } catch (e) { el.innerHTML = `<div class="error-msg">Fejl: ${e.message}</div>`; }
         }
 
-        // REVENUE PER PAX (TICKET SIZE)
+        // ===================== TICKET SIZE =====================
+
         async function loadTicketSize() {
             const el = document.getElementById('ticketSizeContent');
             el.innerHTML = '<div class="loading"><div class="spinner"></div>Henter omsætning vs. PAX...</div>';
@@ -797,20 +957,8 @@
             const benchEnd = document.getElementById('ticketBenchEnd').value;
 
             try {
-                // Fetch revenue and PAX for current period
-                const revParams = new URLSearchParams({
-                    start_date: startDate,
-                    end_date: endDate,
-                    benchmark_start: benchStart,
-                    benchmark_end: benchEnd,
-                });
-
-                const paxParams = new URLSearchParams({
-                    start_date: startDate,
-                    end_date: endDate,
-                    benchmark_start: benchStart,
-                    benchmark_end: benchEnd,
-                });
+                const revParams = new URLSearchParams({ start_date: startDate, end_date: endDate, benchmark_start: benchStart, benchmark_end: benchEnd });
+                const paxParams = new URLSearchParams({ start_date: startDate, end_date: endDate, benchmark_start: benchStart, benchmark_end: benchEnd });
 
                 const [revRes, paxRes] = await Promise.all([
                     fetch(`${API}/api/revenue/by-department?${revParams}`),
@@ -819,33 +967,20 @@
 
                 const revJson = await revRes.json();
                 const paxJson = await paxRes.json();
-
                 if (revJson.error) throw new Error(revJson.error);
                 if (paxJson.error) throw new Error(paxJson.error);
 
                 let revData = revJson.data;
                 let paxData = paxJson.data;
 
-                // Filter by user department
                 if (!isAdmin && userDepartment !== 'all') {
                     revData = revData.filter(r => r.department === userDepartment);
                     paxData = paxData.filter(r => r.department === userDepartment);
                 }
 
-                // Build maps
-                const revMap = {};
-                const revBenchMap = {};
-                for (const r of revData) {
-                    revMap[r.department] = r.current_revenue || 0;
-                    if (r.benchmark_revenue !== undefined) revBenchMap[r.department] = r.benchmark_revenue || 0;
-                }
-
-                const paxMap = {};
-                const paxBenchMap = {};
-                for (const r of paxData) {
-                    paxMap[r.department] = r.current_pax || 0;
-                    if (r.benchmark_pax !== undefined) paxBenchMap[r.department] = r.benchmark_pax || 0;
-                }
+                const revMap = {}, revBenchMap = {}, paxMap = {}, paxBenchMap = {};
+                for (const r of revData) { revMap[r.department] = r.current_revenue || 0; if (r.benchmark_revenue !== undefined) revBenchMap[r.department] = r.benchmark_revenue || 0; }
+                for (const r of paxData) { paxMap[r.department] = r.current_pax || 0; if (r.benchmark_pax !== undefined) paxBenchMap[r.department] = r.benchmark_pax || 0; }
 
                 const hasBenchmark = Object.keys(revBenchMap).length > 0;
                 const allDepts = [...new Set([...Object.keys(revMap), ...Object.keys(paxMap)])].sort();
@@ -857,17 +992,13 @@
                     const rev = revMap[dept] || 0;
                     const pax = paxMap[dept] || 0;
                     const ticket = pax > 0 ? rev / pax : 0;
-                    totalRev += rev;
-                    totalPax += pax;
-
+                    totalRev += rev; totalPax += pax;
                     const entry = { dept, ticket };
-
                     if (hasBenchmark) {
                         const benchRev = revBenchMap[dept] || 0;
                         const benchPax = paxBenchMap[dept] || 0;
                         const benchTicket = benchPax > 0 ? benchRev / benchPax : 0;
-                        totalBenchRev += benchRev;
-                        totalBenchPax += benchPax;
+                        totalBenchRev += benchRev; totalBenchPax += benchPax;
                         entry.benchTicket = benchTicket;
                         entry.changePct = benchTicket > 0 ? ((ticket - benchTicket) / benchTicket * 100) : 0;
                     }
@@ -878,73 +1009,24 @@
                 const totalBenchTicket = totalBenchPax > 0 ? totalBenchRev / totalBenchPax : 0;
                 const totalChangePct = totalBenchTicket > 0 ? ((totalTicket - totalBenchTicket) / totalBenchTicket * 100) : 0;
 
-                let statsHtml = `
-                    <div class="stats-bar fade-in">
-                        <div class="stat-card">
-                            <div class="stat-label">Oms. pr. PAX</div>
-                            <div class="stat-value">${totalTicket.toFixed(1)} kr.</div>
-                        </div>
-                        ${hasBenchmark ? `
-                        <div class="stat-card">
-                            <div class="stat-label">Benchmark</div>
-                            <div class="stat-value">${totalBenchTicket.toFixed(1)} kr.</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Ændring</div>
-                            <div class="stat-value">${changeTag(totalChangePct, true)}</div>
-                        </div>
-                        ` : ''}
-                    </div>
-                `;
-
-                let html = `
-                    <div class="table-wrapper fade-in">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Restaurant</th>
-                                    <th class="num">Oms. pr. PAX</th>
-                                    ${hasBenchmark ? '<th class="num">Benchmark</th><th class="num">Ændring</th>' : ''}
-                                </tr>
-                            </thead>
-                            <tbody>
-                `;
+                let out = `<div class="stats-bar fade-in">
+                    <div class="stat-card"><div class="stat-label">Oms. pr. PAX</div><div class="stat-value">${totalTicket.toFixed(1)} kr.</div></div>
+                    ${hasBenchmark ? `<div class="stat-card"><div class="stat-label">Benchmark</div><div class="stat-value">${totalBenchTicket.toFixed(1)} kr.</div></div>
+                    <div class="stat-card"><div class="stat-label">Ændring</div><div class="stat-value">${changeTag(totalChangePct, true)}</div></div>` : ''}
+                </div>
+                <div class="table-wrapper fade-in"><table><thead><tr><th>Restaurant</th><th class="num">Oms. pr. PAX</th>${hasBenchmark ? '<th class="num">Benchmark</th><th class="num">Ændring</th>' : ''}</tr></thead><tbody>`;
 
                 for (const r of rows) {
-                    html += `
-                        <tr>
-                            <td class="dept-name">${shortDept(r.dept)}</td>
-                            <td class="num">${r.ticket.toFixed(1)} kr.</td>
-                            ${hasBenchmark ? `
-                                <td class="num">${r.benchTicket.toFixed(1)} kr.</td>
-                                <td class="num">${changeTag(r.changePct, true)}</td>
-                            ` : ''}
-                        </tr>
-                    `;
+                    out += `<tr><td class="dept-name">${shortDept(r.dept)}</td><td class="num">${r.ticket.toFixed(1)} kr.</td>${hasBenchmark ? `<td class="num">${r.benchTicket.toFixed(1)} kr.</td><td class="num">${changeTag(r.changePct, true)}</td>` : ''}</tr>`;
                 }
+                out += `<tr class="summary-row"><td><strong>Total</strong></td><td class="num">${totalTicket.toFixed(1)} kr.</td>${hasBenchmark ? `<td class="num">${totalBenchTicket.toFixed(1)} kr.</td><td class="num">${changeTag(totalChangePct, true)}</td>` : ''}</tr></tbody></table></div>`;
+                el.innerHTML = out;
 
-                html += `
-                        <tr class="summary-row">
-                            <td><strong>Total</strong></td>
-                            <td class="num">${totalTicket.toFixed(1)} kr.</td>
-                            ${hasBenchmark ? `
-                                <td class="num">${totalBenchTicket.toFixed(1)} kr.</td>
-                                <td class="num">${changeTag(totalChangePct, true)}</td>
-                            ` : ''}
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-                `;
-
-                el.innerHTML = statsHtml + html;
-
-            } catch (e) {
-                el.innerHTML = `<div class="error-msg">Fejl: ${e.message}</div>`;
-            }
+            } catch (e) { el.innerHTML = `<div class="error-msg">Fejl: ${e.message}</div>`; }
         }
 
-        // LABOR VS REVENUE DAILY
+        // ===================== LABOR VS REVENUE =====================
+
         async function loadLaborDaily() {
             const el = document.getElementById('laborDailyContent');
             el.innerHTML = '<div class="loading"><div class="spinner"></div>Henter løn og omsætning...</div>';
@@ -958,14 +1040,11 @@
             try {
                 const res = await fetch(`${API}/api/labor-vs-revenue/daily?${params}`);
                 const json = await res.json();
-
                 if (json.error) throw new Error(json.error);
 
                 const data = json.data;
-                const deptFilter = document.getElementById('laborDept').value;
                 const weekdays = ['søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag'];
 
-                // Group by date
                 const byDate = {};
                 for (const r of data) {
                     if (!byDate[r.date]) byDate[r.date] = { revenue: 0, labor: 0 };
@@ -973,93 +1052,126 @@
                     byDate[r.date].labor += r.labor;
                 }
 
-                let totalRevenue = 0;
-                let totalLabor = 0;
+                let totalRevenue = 0, totalLabor = 0;
 
-                let html = `
-                    <div class="table-wrapper fade-in">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Dato</th>
-                                    <th class="num">Omsætning</th>
-                                    <th class="num">Lønomkostning</th>
-                                    <th class="num">Løn %</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                `;
+                let html = `<div class="table-wrapper fade-in"><table><thead><tr><th>Dato</th><th class="num">Omsætning</th><th class="num">Lønomkostning</th><th class="num">Løn %</th></tr></thead><tbody>`;
 
                 const dates = Object.keys(byDate).sort();
                 for (const day of dates) {
                     const d = byDate[day];
                     const pct = d.revenue > 0 ? (d.labor / d.revenue * 100) : 0;
-                    totalRevenue += d.revenue;
-                    totalLabor += d.labor;
-
+                    totalRevenue += d.revenue; totalLabor += d.labor;
                     const dateObj = new Date(day + 'T00:00:00');
                     const weekday = weekdays[dateObj.getDay()];
                     const dateLabel = weekday.charAt(0).toUpperCase() + weekday.slice(1) + ' ' + dateObj.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
-
-                    const pctClass = '';
-
-                    html += `
-                        <tr>
-                            <td>${dateLabel}</td>
-                            <td class="num">${formatCurrency(d.revenue)}</td>
-                            <td class="num">${formatCurrency(d.labor)}</td>
-                            <td class="num">${pct.toFixed(1)}%</td>
-                        </tr>
-                    `;
+                    html += `<tr><td>${dateLabel}</td><td class="num">${formatCurrency(d.revenue)}</td><td class="num">${formatCurrency(d.labor)}</td><td class="num">${pct.toFixed(1)}%</td></tr>`;
                 }
 
                 const totalPct = totalRevenue > 0 ? (totalLabor / totalRevenue * 100) : 0;
+                html += `<tr class="summary-row"><td><strong>Total</strong></td><td class="num">${formatCurrency(totalRevenue)}</td><td class="num">${formatCurrency(totalLabor)}</td><td class="num"><strong>${totalPct.toFixed(1)}%</strong></td></tr></tbody></table></div>`;
 
-                html += `
-                        <tr class="summary-row">
-                            <td><strong>Total</strong></td>
-                            <td class="num">${formatCurrency(totalRevenue)}</td>
-                            <td class="num">${formatCurrency(totalLabor)}</td>
-                            <td class="num"><strong>${totalPct.toFixed(1)}%</strong></td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-                `;
-
-                // Add stats bar above table
-                const statsHtml = `
-                    <div class="stats-bar fade-in">
-                        <div class="stat-card">
-                            <div class="stat-label">Omsætning</div>
-                            <div class="stat-value">${formatCurrency(totalRevenue)}</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Lønomkostninger</div>
-                            <div class="stat-value">${formatCurrency(totalLabor)}</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Lønprocent</div>
-                            <div class="stat-value">${totalPct.toFixed(1)}%</div>
-                        </div>
-                    </div>
-                `;
+                const statsHtml = `<div class="stats-bar fade-in">
+                    <div class="stat-card"><div class="stat-label">Omsætning</div><div class="stat-value">${formatCurrency(totalRevenue)}</div></div>
+                    <div class="stat-card"><div class="stat-label">Lønomkostninger</div><div class="stat-value">${formatCurrency(totalLabor)}</div></div>
+                    <div class="stat-card"><div class="stat-label">Lønprocent</div><div class="stat-value">${totalPct.toFixed(1)}%</div></div>
+                </div>`;
 
                 el.innerHTML = statsHtml + html;
 
-            } catch (e) {
-                el.innerHTML = `<div class="error-msg">Fejl: ${e.message}</div>`;
-            }
+            } catch (e) { el.innerHTML = `<div class="error-msg">Fejl: ${e.message}</div>`; }
         }
 
-        // Init
+        // ===================== SICKNESS =====================
+
+        async function loadSickness() {
+            const el = document.getElementById('sicknessContent');
+            const statsEl = document.getElementById('sicknessStats');
+            el.innerHTML = '<div class="loading"><div class="spinner"></div>Henter sygdomsdata...</div>';
+            statsEl.innerHTML = '';
+
+            const year = document.getElementById('sicknessYear').value;
+            const dept = document.getElementById('sicknessDept').value;
+            const group = document.getElementById('sicknessGroup').value;
+
+            const params = new URLSearchParams({ year });
+            if (dept !== 'all') params.append('department', dept);
+            if (group !== 'all') params.append('employee_group', group);
+
+            try {
+                const res = await fetch(`${API}/api/sickness/monthly?${params}`);
+                const json = await res.json();
+                if (json.error) throw new Error(json.error);
+
+                let data = json.data;
+
+                // For non-admin: already filtered by backend or filter here
+                if (!isAdmin && userDepartment !== 'all') {
+                    data = data.filter(r => r.department === userDepartment);
+                }
+
+                const totalHours = data.reduce((s, r) => s + r.total_hours, 0);
+                const totalShifts = data.reduce((s, r) => s + r.total_shifts, 0);
+                const avgPerShift = totalShifts > 0 ? (totalHours / totalShifts) : 0;
+
+                statsEl.innerHTML = `<div class="stats-bar fade-in">
+                    <div class="stat-card"><div class="stat-label">Sygetimer i alt</div><div class="stat-value">${totalHours.toFixed(1)} t</div></div>
+                    <div class="stat-card"><div class="stat-label">Sygevagter i alt</div><div class="stat-value">${totalShifts}</div></div>
+                    <div class="stat-card"><div class="stat-label">Gns. timer/vagt</div><div class="stat-value">${avgPerShift.toFixed(1)} t</div></div>
+                </div>`;
+
+                // Decide layout: multiple departments = wide table, single = vertical
+                const showMultipleDepts = data.length > 1;
+
+                if (showMultipleDepts) {
+                    // Wide table: depts as rows, months as columns
+                    let html = `<div class="table-wrapper fade-in"><table class="wide-table"><thead><tr><th>Afdeling</th>`;
+                    for (const m of MONTH_NAMES) html += `<th class="num">${m}</th>`;
+                    html += `<th class="num col-total">Total</th></tr></thead><tbody>`;
+
+                    // Monthly totals for summary row
+                    const monthTotals = {};
+                    for (let m = 1; m <= 12; m++) monthTotals[m] = 0;
+
+                    for (const row of data) {
+                        html += `<tr><td class="dept-name">${shortDept(row.department)}</td>`;
+                        for (let m = 1; m <= 12; m++) {
+                            const h = row.months[String(m)] ? row.months[String(m)].hours : 0;
+                            monthTotals[m] += h;
+                            const cls = h === 0 ? 'sick-zero' : (h >= 40 ? 'sick-high' : '');
+                            html += `<td class="num ${cls}">${h === 0 ? '—' : h.toFixed(1)}</td>`;
+                        }
+                        html += `<td class="num col-total">${row.total_hours.toFixed(1)}</td></tr>`;
+                    }
+
+                    // Summary row
+                    html += `<tr class="summary-row"><td><strong>Total</strong></td>`;
+                    for (let m = 1; m <= 12; m++) {
+                        html += `<td class="num">${monthTotals[m] === 0 ? '—' : monthTotals[m].toFixed(1)}</td>`;
+                    }
+                    html += `<td class="num col-total">${totalHours.toFixed(1)}</td></tr>`;
+                    html += `</tbody></table></div>`;
+                    el.innerHTML = html;
+
+                } else {
+                    // Single department: months as rows
+                    const row = data[0] || { months: {}, total_hours: 0, total_shifts: 0 };
+                    let html = `<div class="table-wrapper fade-in"><table><thead><tr><th>Måned</th><th class="num">Sygetimer</th><th class="num">Sygevagter</th></tr></thead><tbody>`;
+                    for (let m = 1; m <= 12; m++) {
+                        const d = row.months[String(m)] || { hours: 0, shifts: 0 };
+                        const cls = d.hours === 0 ? 'sick-zero' : (d.hours >= 40 ? 'sick-high' : '');
+                        html += `<tr><td>${MONTH_NAMES_LONG[m - 1]}</td><td class="num ${cls}">${d.hours === 0 ? '—' : d.hours.toFixed(1)}</td><td class="num ${cls}">${d.shifts === 0 ? '—' : d.shifts}</td></tr>`;
+                    }
+                    html += `<tr class="summary-row"><td><strong>Total</strong></td><td class="num">${row.total_hours.toFixed(1)}</td><td class="num">${row.total_shifts}</td></tr></tbody></table></div>`;
+                    el.innerHTML = html;
+                }
+
+            } catch (e) { el.innerHTML = `<div class="error-msg">Fejl: ${e.message}</div>`; }
+        }
+
+        // ===================== INIT =====================
+
         let userDepartment = 'all';
         let isAdmin = true;
-
-        function initLaborDates() {
-            document.getElementById('laborStart').value = mondayThisWeek();
-            document.getElementById('laborEnd').value = today();
-        }
 
         async function initDashboard() {
             // Get user info
@@ -1069,32 +1181,37 @@
                 userDepartment = info.department_filter;
                 isAdmin = info.is_admin;
 
-                // Update header with user info
                 if (!isAdmin) {
+                    // Show department header
+                    const deptHeader = document.getElementById('deptHeader');
+                    deptHeader.textContent = shortDept(userDepartment);
+                    deptHeader.style.display = 'block';
+
                     document.getElementById('lastUpdate').textContent = shortDept(userDepartment);
-                    // Lock department selector
+
+                    // Lock labor department selector
                     const laborDept = document.getElementById('laborDept');
                     laborDept.value = userDepartment;
                     laborDept.disabled = true;
+
+                    // Lock sickness department selector
+                    const sicknessDept = document.getElementById('sicknessDept');
+                    sicknessDept.value = userDepartment;
+                    sicknessDept.disabled = true;
                 }
             } catch (e) {
                 console.log('Could not fetch user info');
             }
 
             initDates();
-            initLaborDates();
 
-            // Ticket size dates (same as revenue defaults)
-            document.getElementById('ticketStart').value = mondayThisWeek();
-            document.getElementById('ticketEnd').value = today();
-            document.getElementById('ticketBenchStart').value = sameDayLastYear(mondayThisWeek());
-            document.getElementById('ticketBenchEnd').value = sameDayLastYear(today());
-
+            // Load all sections
             loadPaxToday();
             loadRevenue();
             loadPaxBenchmark();
             loadTicketSize();
             loadLaborDaily();
+            loadSickness();
         }
 
         initDashboard();
