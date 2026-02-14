@@ -4,27 +4,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Creative Space Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
     <style>
+        @font-face {
+            font-family: 'GT Haptik';
+            src: url('/static/GT-Haptik-alt-Regular.woff2') format('woff2');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'GT Haptik';
+            src: url('/static/GT-Haptik-alt-Bold.woff2') format('woff2');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+
         :root {
-            --bg: #0a0a0a;
-            --surface: #141414;
-            --surface-hover: #1a1a1a;
-            --border: #222;
-            --text: #e8e8e8;
-            --text-muted: #888;
-            --accent: #c8a456;
-            --accent-dim: #c8a45622;
-            --green: #4ade80;
-            --green-bg: #4ade8012;
-            --red: #f87171;
-            --red-bg: #f8717112;
+            --bg: #ffffff;
+            --surface: #f8f8f8;
+            --surface-hover: #f0f0f0;
+            --border: #e5e5e5;
+            --text: #1a1a1a;
+            --text-muted: #666;
+            --accent: #EC6907;
+            --accent-dim: #EC690722;
+            --green: #16a34a;
+            --green-bg: #16a34a12;
+            --red: #dc2626;
+            --red-bg: #dc262612;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'GT Haptik', 'DM Sans', sans-serif;
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
@@ -48,7 +63,7 @@
 
         header h1 {
             font-size: 22px;
-            font-weight: 600;
+            font-weight: 700;
             letter-spacing: -0.02em;
             color: var(--accent);
         }
@@ -107,7 +122,7 @@
             color: var(--text);
             padding: 6px 10px;
             border-radius: 6px;
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'GT Haptik', sans-serif;
             font-size: 13px;
             outline: none;
             transition: border-color 0.2s;
@@ -153,7 +168,7 @@
         td {
             padding: 12px 16px;
             font-size: 14px;
-            border-bottom: 1px solid #1a1a1a;
+            border-bottom: 1px solid #eee;
             font-variant-numeric: tabular-nums;
         }
 
@@ -190,7 +205,7 @@
         .summary-row td {
             border-top: 2px solid var(--border);
             font-weight: 600;
-            background: #0f0f0f;
+            background: #f0f0f0;
             border-bottom: none;
         }
 
@@ -283,7 +298,7 @@
             color: var(--text-muted);
             padding: 6px 14px;
             border-radius: 6px;
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'GT Haptik', sans-serif;
             font-size: 12px;
             cursor: pointer;
             transition: all 0.2s;
@@ -383,13 +398,32 @@
             </div>
         </div>
 
-        <!-- LØN VS OMSÆTNING -->
+        <!-- LØN VS OMSÆTNING DAGLIGT -->
         <div class="section">
             <div class="section-header">
-                <span class="section-title">Løn vs. omsætning i dag</span>
-                <button class="btn-refresh" onclick="loadLaborToday()">Opdater</button>
+                <span class="section-title">Løn vs. omsætning</span>
+                <div class="date-controls">
+                    <div class="date-group">
+                        <label>Periode</label>
+                        <input type="date" id="laborStart">
+                        <input type="date" id="laborEnd">
+                    </div>
+                    <div class="date-group">
+                        <label>Butik</label>
+                        <select id="laborDept" style="background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;">
+                            <option value="all">Alle</option>
+                            <option value="Creative Space Aarhus">Aarhus</option>
+                            <option value="Creative Space Frederiksberg">Frederiksberg</option>
+                            <option value="Creative Space Lyngby">Lyngby</option>
+                            <option value="Creative Space Odense">Odense</option>
+                            <option value="Creative Space Østerbro">Østerbro</option>
+                            <option value="Creative Space Vejle">Vejle</option>
+                        </select>
+                    </div>
+                    <button class="btn-refresh" onclick="loadLaborDaily()">Hent</button>
+                </div>
             </div>
-            <div id="laborTodayContent">
+            <div id="laborDailyContent">
                 <div class="loading"><div class="spinner"></div>Henter løn og omsætning...</div>
             </div>
         </div>
@@ -720,72 +754,44 @@
             }
         }
 
-        // LABOR VS REVENUE TODAY
-        async function loadLaborToday() {
-            const el = document.getElementById('laborTodayContent');
+        // LABOR VS REVENUE DAILY
+        async function loadLaborDaily() {
+            const el = document.getElementById('laborDailyContent');
             el.innerHTML = '<div class="loading"><div class="spinner"></div>Henter løn og omsætning...</div>';
 
-            const tod = today();
+            const params = new URLSearchParams({
+                start_date: document.getElementById('laborStart').value,
+                end_date: document.getElementById('laborEnd').value,
+                department: document.getElementById('laborDept').value,
+            });
 
             try {
-                const [laborRes, revenueRes] = await Promise.all([
-                    fetch(`${API}/api/labor/by-department?start_date=${tod}&end_date=${tod}`),
-                    fetch(`${API}/api/revenue/by-department?start_date=${tod}&end_date=${tod}`),
-                ]);
+                const res = await fetch(`${API}/api/labor-vs-revenue/daily?${params}`);
+                const json = await res.json();
 
-                const laborJson = await laborRes.json();
-                const revenueJson = await revenueRes.json();
+                if (json.error) throw new Error(json.error);
 
-                if (laborJson.error) throw new Error(laborJson.error);
-                if (revenueJson.error) throw new Error(revenueJson.error);
+                const data = json.data;
+                const deptFilter = document.getElementById('laborDept').value;
+                const weekdays = ['søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag'];
 
-                // Build maps
-                const laborMap = {};
-                for (const r of laborJson.data) {
-                    laborMap[r.department] = r.current_labor || r.total_labor || 0;
+                // Group by date
+                const byDate = {};
+                for (const r of data) {
+                    if (!byDate[r.date]) byDate[r.date] = { revenue: 0, labor: 0 };
+                    byDate[r.date].revenue += r.revenue;
+                    byDate[r.date].labor += r.labor;
                 }
-                const revenueMap = {};
-                for (const r of revenueJson.data) {
-                    revenueMap[r.department] = r.current_revenue || 0;
-                }
-
-                const allDepts = [...new Set([...Object.keys(laborMap), ...Object.keys(revenueMap)])].sort();
 
                 let totalRevenue = 0;
                 let totalLabor = 0;
 
-                let rows = [];
-                for (const dept of allDepts) {
-                    const rev = revenueMap[dept] || 0;
-                    const lab = laborMap[dept] || 0;
-                    const pct = rev > 0 ? (lab / rev * 100) : 0;
-                    totalRevenue += rev;
-                    totalLabor += lab;
-                    rows.push({ dept, rev, lab, pct });
-                }
-
-                const totalPct = totalRevenue > 0 ? (totalLabor / totalRevenue * 100) : 0;
-
                 let html = `
-                    <div class="stats-bar fade-in">
-                        <div class="stat-card">
-                            <div class="stat-label">Omsætning i dag</div>
-                            <div class="stat-value">${formatCurrency(totalRevenue)}</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Lønomkostninger i dag</div>
-                            <div class="stat-value">${formatCurrency(totalLabor)}</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Lønprocent</div>
-                            <div class="stat-value">${totalPct.toFixed(1)}%</div>
-                        </div>
-                    </div>
                     <div class="table-wrapper fade-in">
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Restaurant</th>
+                                    <th>Dato</th>
                                     <th class="num">Omsætning</th>
                                     <th class="num">Lønomkostning</th>
                                     <th class="num">Løn %</th>
@@ -794,17 +800,30 @@
                             <tbody>
                 `;
 
-                for (const r of rows) {
-                    const pctClass = r.pct > 25 ? 'change-negative' : r.pct > 0 ? 'change-positive' : 'change-zero';
+                const dates = Object.keys(byDate).sort();
+                for (const day of dates) {
+                    const d = byDate[day];
+                    const pct = d.revenue > 0 ? (d.labor / d.revenue * 100) : 0;
+                    totalRevenue += d.revenue;
+                    totalLabor += d.labor;
+
+                    const dateObj = new Date(day + 'T00:00:00');
+                    const weekday = weekdays[dateObj.getDay()];
+                    const dateLabel = weekday.charAt(0).toUpperCase() + weekday.slice(1) + ' ' + dateObj.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
+
+                    const pctClass = pct > 25 ? 'change-negative' : pct > 0 ? 'change-positive' : 'change-zero';
+
                     html += `
                         <tr>
-                            <td class="dept-name">${shortDept(r.dept)}</td>
-                            <td class="num">${formatCurrency(r.rev)}</td>
-                            <td class="num">${formatCurrency(r.lab)}</td>
-                            <td class="num"><span class="${pctClass}">${r.pct.toFixed(1)}%</span></td>
+                            <td>${dateLabel}</td>
+                            <td class="num">${formatCurrency(d.revenue)}</td>
+                            <td class="num">${formatCurrency(d.labor)}</td>
+                            <td class="num"><span class="${pctClass}">${pct.toFixed(1)}%</span></td>
                         </tr>
                     `;
                 }
+
+                const totalPct = totalRevenue > 0 ? (totalLabor / totalRevenue * 100) : 0;
 
                 html += `
                         <tr class="summary-row">
@@ -818,7 +837,25 @@
                 </div>
                 `;
 
-                el.innerHTML = html;
+                // Add stats bar above table
+                const statsHtml = `
+                    <div class="stats-bar fade-in">
+                        <div class="stat-card">
+                            <div class="stat-label">Omsætning</div>
+                            <div class="stat-value">${formatCurrency(totalRevenue)}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Lønomkostninger</div>
+                            <div class="stat-value">${formatCurrency(totalLabor)}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Lønprocent</div>
+                            <div class="stat-value">${totalPct.toFixed(1)}%</div>
+                        </div>
+                    </div>
+                `;
+
+                el.innerHTML = statsHtml + html;
 
             } catch (e) {
                 el.innerHTML = `<div class="error-msg">Fejl: ${e.message}</div>`;
@@ -826,11 +863,17 @@
         }
 
         // Init
+        function initLaborDates() {
+            document.getElementById('laborStart').value = mondayThisWeek();
+            document.getElementById('laborEnd').value = today();
+        }
+
         initDates();
+        initLaborDates();
         loadPaxToday();
         loadRevenue();
         loadPaxBenchmark();
-        loadLaborToday();
+        loadLaborDaily();
     </script>
 </body>
 </html>
