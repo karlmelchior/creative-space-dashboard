@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creative Space Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #141414;
+            --surface-hover: #1a1a1a;
+            --border: #222;
+            --text: #e8e8e8;
+            --text-muted: #888;
+            --accent: #c8a456;
+            --accent-dim: #c8a45622;
+            --green: #4ade80;
+            --green-bg: #4ade8012;
+            --red: #f87171;
+            --red-bg: #f8717112;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        header h1 {
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: var(--accent);
+        }
+
+        header .timestamp {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* Sections */
+        .section {
+            margin-bottom: 48px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+        }
+
+        /* Date pickers */
+        .date-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .date-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .date-group label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        input[type="date"] {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="date"]:focus {
+            border-color: var(--accent);
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(0.7);
+        }
+
+        /* Tables */
+        .table-wrapper {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+            position: sticky;
+            top: 0;
+        }
+
+        th.num { text-align: right; }
+
+        td {
+            padding: 12px 16px;
+            font-size: 14px;
+            border-bottom: 1px solid #1a1a1a;
+            font-variant-numeric: tabular-nums;
+        }
+
+        td.num { text-align: right; font-weight: 500; }
+
+        tr:last-child td { border-bottom: none; }
+
+        tr:hover td { background: var(--surface-hover); }
+
+        .change-positive {
+            color: var(--green);
+            background: var(--green-bg);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .change-negative {
+            color: var(--red);
+            background: var(--red-bg);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .change-zero {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        /* Summary row */
+        .summary-row td {
+            border-top: 2px solid var(--border);
+            font-weight: 600;
+            background: #0f0f0f;
+            border-bottom: none;
+        }
+
+        /* Stats bar */
+        .stats-bar {
+            display: flex;
+            gap: 1px;
+            background: var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            flex: 1;
+            background: var(--surface);
+            padding: 20px 20px;
+        }
+
+        .stat-card:first-child { border-radius: 10px 0 0 10px; }
+        .stat-card:last-child { border-radius: 0 10px 10px 0; }
+
+        .stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .stat-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* Loading state */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .error-msg {
+            color: var(--red);
+            font-size: 13px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        /* Grid layout */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 900px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .stats-bar { flex-direction: column; }
+            .stat-card:first-child { border-radius: 10px 10px 0 0; }
+            .stat-card:last-child { border-radius: 0 0 10px 10px; }
+        }
+
+        /* Refresh button */
+        .btn-refresh {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.02em;
+        }
+
+        .btn-refresh:hover {
+            border-color: var(--accent);
+            color: var(--text);
+        }
+
+        .btn-refresh.loading-btn {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        /* Fade in animation */
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dept-name {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <header>
+            <h1>Creative Space</h1>
+            <span class="timestamp" id="lastUpdate"></span>
+        </header>
+
+        <!-- PAX I DAG -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-title">PAX i dag &mdash; <span id="todayDate"></span></span>
+                <button class="btn-refresh" onclick="loadPaxToday()">Opdater live</button>
+            </div>
+            <div id="paxTodayContent">
+                <div class="loading"><div class="spinner"></div>Henter live PAX...</div>
+            </div>
+        </div>
+
+        <!-- OMSÆTNING -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-title">Omsætning ex. moms</span>
+                <div class="date-controls">
+                    <div class="date-group">
+                        <label>Periode</label>
+                        <input type="date" id="revStart">
+                        <input type="date" id="revEnd">
+                    </div>
+                    <div class="date-group">
+                        <label>Benchmark</label>
+                        <input type="date" id="revBenchStart">
+                        <input type="date" id="revBenchEnd">
+                    </div>
+                    <button class="btn-refresh" onclick="loadRevenue()">Hent</button>
+                </div>
+            </div>
+            <div id="revenueStats"></div>
+            <div id="revenueContent">
+                <div class="loading"><div class="spinner"></div>Henter omsætning...</div>
+            </div>
+        </div>
+
+        <!-- PAX BENCHMARK -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-title">PAX sammenlignet</span>
+                <div class="date-controls">
+                    <div class="date-group">
+                        <label>Periode</label>
+                        <input type="date" id="paxStart">
+                        <input type="date" id="paxEnd">
+                    </div>
+                    <div class="date-group">
+                        <label>Benchmark</label>
+                        <input type="date" id="paxBenchStart">
+                        <input type="date" id="paxBenchEnd">
+                    </div>
+                    <button class="btn-refresh" onclick="loadPaxBenchmark()">Hent</button>
+                </div>
+            </div>
+            <div id="paxBenchmarkContent">
+                <div class="loading"><div class="spinner"></div>Henter PAX...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = 'https://web-production-bf4c.up.railway.app';
+
+        // Date helpers
+        function today() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        function mondayThisWeek() {
+            const d = new Date();
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+            return new Date(d.setDate(diff)).toISOString().split('T')[0];
+        }
+
+        function sameDayLastYear(dateStr) {
+            const d = new Date(dateStr);
+            d.setFullYear(d.getFullYear() - 1);
+            return d.toISOString().split('T')[0];
+        }
+
+        function formatNum(n) {
+            if (n == null) return '—';
+            return Math.round(n).toLocaleString('da-DK');
+        }
+
+        function formatCurrency(n) {
+            if (n == null) return '—';
+            return Math.round(n).toLocaleString('da-DK') + ' kr.';
+        }
+
+        function formatPct(n) {
+            if (n == null) return '—';
+            return n.toFixed(1) + '%';
+        }
+
+        function changeTag(value, isPercent = false) {
+            if (value == null || value === 0) return '<span class="change-zero">0</span>';
+            const cls = value > 0 ? 'change-positive' : 'change-negative';
+            const prefix = value > 0 ? '+' : '';
+            const display = isPercent ? formatPct(value) : formatNum(value);
+            return `<span class="${cls}">${prefix}${display}</span>`;
+        }
+
+        function shortDept(name) {
+            return name.replace('Creative Space ', '');
+        }
+
+        // Set default dates
+        function initDates() {
+            const mon = mondayThisWeek();
+            const tod = today();
+            const monLY = sameDayLastYear(mon);
+            const todLY = sameDayLastYear(tod);
+
+            document.getElementById('revStart').value = mon;
+            document.getElementById('revEnd').value = tod;
+            document.getElementById('revBenchStart').value = monLY;
+            document.getElementById('revBenchEnd').value = todLY;
+
+            document.getElementById('paxStart').value = mon;
+            document.getElementById('paxEnd').value = tod;
+            document.getElementById('paxBenchStart').value = monLY;
+            document.getElementById('paxBenchEnd').value = todLY;
+
+            document.getElementById('todayDate').textContent = new Date().toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        }
+
+        // PAX TODAY
+        async function loadPaxToday() {
+            const el = document.getElementById('paxTodayContent');
+            el.innerHTML = '<div class="loading"><div class="spinner"></div>Henter live PAX fra DinnerBooking...</div>';
+
+            try {
+                const res = await fetch(`${API}/api/pax/live?date=${today()}`);
+                const json = await res.json();
+
+                if (json.error) throw new Error(json.error);
+
+                const data = json.data;
+                const totalPax = data.reduce((s, r) => s + r.pax, 0);
+                const totalBookings = data.reduce((s, r) => s + r.bookings, 0);
+
+                let html = `
+                    <div class="stats-bar fade-in">
+                        <div class="stat-card">
+                            <div class="stat-label">Total PAX</div>
+                            <div class="stat-value">${formatNum(totalPax)}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Bookings</div>
+                            <div class="stat-value">${formatNum(totalBookings)}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Gns. PAX/booking</div>
+                            <div class="stat-value">${totalBookings > 0 ? (totalPax / totalBookings).toFixed(1) : '—'}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Kilde</div>
+                            <div class="stat-value" style="font-size:13px; color: var(--green);">Live</div>
+                            <div class="stat-sub">${json.fetched_at}</div>
+                        </div>
+                    </div>
+                    <div class="table-wrapper fade-in">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Restaurant</th>
+                                    <th class="num">PAX</th>
+                                    <th class="num">Bookings</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                for (const r of data.sort((a, b) => b.pax - a.pax)) {
+                    html += `
+                        <tr>
+                            <td class="dept-name">${shortDept(r.department)}</td>
+                            <td class="num">${formatNum(r.pax)}</td>
+                            <td class="num">${formatNum(r.bookings)}</td>
+                        </tr>
+                    `;
+                }
+
+                html += `
+                            <tr class="summary-row">
+                                <td><strong>Total</strong></td>
+                                <td class="num">${formatNum(totalPax)}</td>
+                                <td class="num">${formatNum(totalBookings)}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                el.innerHTML = html;
+                document.getElementById('lastUpdate').textContent = 'Sidst opdateret: ' + new Date().toLocaleTimeString('da-DK');
+
+            } catch (e) {
+                el.innerHTML = `<div class="error-msg">Fejl: ${e.message}</div>`;
+            }
+        }
+
+        // REVENUE
+        async function loadRevenue() {
+            const el = document.getElementById('revenueContent');
+            const statsEl = document.getElementById('revenueStats');
+            el.innerHTML = '<div class="loading"><div class="spinner"></div>Henter omsætning...</div>';
+            statsEl.innerHTML = '';
+
+            const params = new URLSearchParams({
+                start_date: document.getElementById('revStart').value,
+                end_date: document.getElementById('revEnd').value,
+                benchmark_start: document.getElementById('revBenchStart').value,
+                benchmark_end: document.getElementById('revBenchEnd').value,
+            });
+
+            try {
+                const res = await fetch(`${API}/api/revenue/by-department?${params}`);
+                const json = await res.json();
+
+                if (json.error) throw new Error(json.error);
+
+                const data = json.data;
+                const hasBenchmark = data.length > 0 && data[0].benchmark_revenue !== undefined;
+
+                const totalCurrent = data.reduce((s, r) => s + (r.current_revenue || 0), 0);
+                const totalBenchmark = hasBenchmark ? data.reduce((s, r) => s + (r.benchmark_revenue || 0), 0) : null;
+                const totalChange = totalBenchmark ? ((totalCurrent - totalBenchmark) / totalBenchmark * 100) : null;
+
+                statsEl.innerHTML = `
+                    <div class="stats-bar fade-in">
+                        <div class="stat-card">
+                            <div class="stat-label">Periode</div>
+                            <div class="stat-value">${formatCurrency(totalCurrent)}</div>
+                        </div>
+                        ${hasBenchmark ? `
+                        <div class="stat-card">
+                            <div class="stat-label">Benchmark</div>
+                            <div class="stat-value">${formatCurrency(totalBenchmark)}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Ændring</div>
+                            <div class="stat-value">${changeTag(totalChange, true)}</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+
+                let html = `
+                    <div class="table-wrapper fade-in">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Restaurant</th>
+                                    <th class="num">Periode</th>
+                                    ${hasBenchmark ? '<th class="num">Benchmark</th><th class="num">Ændring</th>' : ''}
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                for (const r of data) {
+                    html += `
+                        <tr>
+                            <td class="dept-name">${r.department}</td>
+                            <td class="num">${formatCurrency(r.current_revenue)}</td>
+                            ${hasBenchmark ? `
+                                <td class="num">${formatCurrency(r.benchmark_revenue)}</td>
+                                <td class="num">${changeTag(r.change_percent, true)}</td>
+                            ` : ''}
+                        </tr>
+                    `;
+                }
+
+                html += `
+                        <tr class="summary-row">
+                            <td><strong>Total</strong></td>
+                            <td class="num">${formatCurrency(totalCurrent)}</td>
+                            ${hasBenchmark ? `
+                                <td class="num">${formatCurrency(totalBenchmark)}</td>
+                                <td class="num">${changeTag(totalChange, true)}</td>
+                            ` : ''}
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                `;
+
+                el.innerHTML = html;
+
+            } catch (e) {
+                el.innerHTML = `<div class="error-msg">Fejl: ${e.message}</div>`;
+            }
+        }
+
+        // PAX BENCHMARK
+        async function loadPaxBenchmark() {
+            const el = document.getElementById('paxBenchmarkContent');
+            el.innerHTML = '<div class="loading"><div class="spinner"></div>Henter PAX fra Snowflake...</div>';
+
+            const params = new URLSearchParams({
+                start_date: document.getElementById('paxStart').value,
+                end_date: document.getElementById('paxEnd').value,
+                benchmark_start: document.getElementById('paxBenchStart').value,
+                benchmark_end: document.getElementById('paxBenchEnd').value,
+            });
+
+            try {
+                const res = await fetch(`${API}/api/pax/by-department?${params}`);
+                const json = await res.json();
+
+                if (json.error) throw new Error(json.error);
+
+                const data = json.data;
+                const hasBenchmark = data.length > 0 && data[0].benchmark_pax !== undefined;
+
+                const totalCurrent = data.reduce((s, r) => s + (r.current_pax || 0), 0);
+                const totalBenchmark = hasBenchmark ? data.reduce((s, r) => s + (r.benchmark_pax || 0), 0) : null;
+                const totalChange = hasBenchmark ? (totalCurrent - totalBenchmark) : null;
+
+                let html = `
+                    <div class="stats-bar fade-in">
+                        <div class="stat-card">
+                            <div class="stat-label">Periode PAX</div>
+                            <div class="stat-value">${formatNum(totalCurrent)}</div>
+                        </div>
+                        ${hasBenchmark ? `
+                        <div class="stat-card">
+                            <div class="stat-label">Benchmark PAX</div>
+                            <div class="stat-value">${formatNum(totalBenchmark)}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Forskel</div>
+                            <div class="stat-value">${changeTag(totalChange)}</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                    <div class="table-wrapper fade-in">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Restaurant</th>
+                                    <th class="num">Periode</th>
+                                    ${hasBenchmark ? '<th class="num">Benchmark</th><th class="num">Forskel</th>' : ''}
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                for (const r of data) {
+                    html += `
+                        <tr>
+                            <td class="dept-name">${shortDept(r.department)}</td>
+                            <td class="num">${formatNum(r.current_pax)}</td>
+                            ${hasBenchmark ? `
+                                <td class="num">${formatNum(r.benchmark_pax)}</td>
+                                <td class="num">${changeTag(r.change)}</td>
+                            ` : ''}
+                        </tr>
+                    `;
+                }
+
+                html += `
+                        <tr class="summary-row">
+                            <td><strong>Total</strong></td>
+                            <td class="num">${formatNum(totalCurrent)}</td>
+                            ${hasBenchmark ? `
+                                <td class="num">${formatNum(totalBenchmark)}</td>
+                                <td class="num">${changeTag(totalChange)}</td>
+                            ` : ''}
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                `;
+
+                el.innerHTML = html;
+
+            } catch (e) {
+                el.innerHTML = `<div class="error-msg">Fejl: ${e.message}</div>`;
+            }
+        }
+
+        // Init
+        initDates();
+        loadPaxToday();
+        loadRevenue();
+        loadPaxBenchmark();
+    </script>
+</body>
+</html>
