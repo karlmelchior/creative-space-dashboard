@@ -504,12 +504,25 @@ SELECT
 # DASHBOARD
 # =============================================================================
 
+from functools import wraps
+
+def check_auth(username, password):
+    return password == 'CS2026!'
+
+def requires_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.authorization
+        if not auth or not check_auth(auth.username, auth.password):
+            return ('Unauthorized', 401, {'WWW-Authenticate': 'Basic realm="Login Required"'})
+        return f(*args, **kwargs)
+    return decorated
+
 @app.route('/dashboard')
+@requires_auth
 def dashboard():
     """Serve the dashboard HTML page."""
     return send_from_directory('static', 'dashboard.html')
-
-
 # =============================================================================
 # HEALTH CHECK
 # =============================================================================
