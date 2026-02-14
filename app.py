@@ -622,14 +622,29 @@ def labor_vs_revenue_daily():
         revenue_rows = sql_cursor.fetchall()
 
         # revenue_map: {date: {department: revenue}}
+        # Normalize revenue department names to match labor names
+        rev_name_map = {
+            'Frederiksberg': 'Creative Space Frederiksberg',
+            'Lyngby': 'Creative Space Lyngby',
+            'Odense': 'Creative Space Odense',
+            'Østerbro': 'Creative Space Østerbro',
+            'Aarhus': 'Creative Space Aarhus',
+            'Vejle': 'Creative Space Vejle',
+        }
+        raw_dept_names = set()
         revenue_map = {}
         for row in revenue_rows:
             day = str(row[0])
-            dept = row[1]
+            raw_dept = str(row[1]).strip()
+            raw_dept_names.add(raw_dept)
+            dept = rev_name_map.get(raw_dept, raw_dept)
             revenue = float(row[2]) if row[2] else 0
             if day not in revenue_map:
                 revenue_map[day] = {}
-            revenue_map[day][dept] = revenue
+            if dept in revenue_map[day]:
+                revenue_map[day][dept] += revenue
+            else:
+                revenue_map[day][dept] = revenue
 
         # Combine
         all_days = sorted(set(list(labor_map.keys()) + list(revenue_map.keys())))
@@ -664,6 +679,7 @@ def labor_vs_revenue_daily():
             'end_date': end_date,
             'department_filter': department_filter,
             'departments': all_departments,
+            'raw_revenue_departments': sorted(list(raw_dept_names)),
         })
 
     except Exception as e:
