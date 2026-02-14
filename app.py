@@ -325,16 +325,22 @@ def pax_by_department():
 
     base_query = """
         SELECT 
-            r.NAME as department,
+            CASE b.RESTAURANT_ID
+                WHEN '2070' THEN 'Creative Space Frederiksberg'
+                WHEN '3394' THEN 'Creative Space Lyngby'
+                WHEN '3395' THEN 'Creative Space Odense'
+                WHEN '3396' THEN 'Creative Space Østerbro'
+                WHEN '3398' THEN 'Creative Space Aarhus'
+                WHEN '3714' THEN 'Creative Space Vejle'
+                ELSE 'Unknown (' || b.RESTAURANT_ID || ')'
+            END as department,
             SUM(b.RESTAURANTBOOKING_B_PAX) as total_pax
         FROM DINNERBOOKING.PYTHON_IMPORT.BOOKINGS b
-        JOIN DINNERBOOKING.PYTHON_IMPORT.RESTAURANTS r 
-            ON b.RESTAURANT_ID = r.ID
         WHERE CAST(b.RESTAURANTBOOKING_B_DATE_TIME AS DATE) >= %s
           AND CAST(b.RESTAURANTBOOKING_B_DATE_TIME AS DATE) <= %s
           AND b.RESTAURANTBOOKING_B_STATUS = 'current'
-        GROUP BY r.NAME
-        ORDER BY r.NAME
+        GROUP BY b.RESTAURANT_ID
+        ORDER BY department
     """
 
     conn = None
@@ -449,47 +455,124 @@ def debug_snowflake_check():
 
 @app.route('/api/labor/by-department', methods=['GET'])
 def labor_by_department():
-    """Get labor cost by department from Snowflake."""
+    """
+    Get labor cost by department from Snowflake (Planday PAYROLL).
+    Optionally includes benchmark period for comparison.
+    
+    Query params:
+        start_date, end_date: Current period (YYYY-MM-DD)
+        benchmark_start, benchmark_end: Benchmark period (optional, YYYY-MM-DD)
+    """
     start_date = request.args.get('start_date', datetime.now().strftime('%Y-%m-%d'))
     end_date = request.args.get('end_date', datetime.now().strftime('%Y-%m-%d'))
+    benchmark_start = request.args.get('benchmark_start', '')
+    benchmark_end = request.args.get('benchmark_end', '')
+
+    # Map Planday department IDs to restaurant names
+    base_query = """
+        SELECT 
+            CASE p.DEPARTMENTID
+                WHEN 162164 THEN 'Creative Space Frederiksberg'
+                WHEN 164684 THEN 'Creative Space Lyngby'
+                WHEN 162209 THEN 'Creative Space Odense'
+                WHEN 162162 THEN 'Creative Space Østerbro'
+                WHEN 162208 THEN 'Creative Space Aarhus'
+                WHEN 164717 THEN 'Creative Space Vejle'
+                ELSE 'Unknown'
+            END as department,
+            SUM(p.SALARY) as total_labor
+        FROM PLANDAY.PYTHON_IMPORT.PAYROLL p
+        WHERE CAST(p.DATE AS DATE) >= %s
+          AND CAST(p.DATE AS DATE) <= %s
+          AND p.DEPARTMENTID IN (162164, 164684, 162209, 162162, 162208, 164717)
+        GROUP BY p.DEPARTMENTID
+        ORDER BY department
+    """
 
     conn = None
     try:
         conn = get_snowflake_connection('PLANDAY')
         cursor = conn.cursor()
 
-        query = """
-SELECT 
-            CASE b.RESTAURANT_ID
-               WHEN 2070 THEN 'Creative Space Frederiksberg'
-                WHEN 3394 THEN 'Creative Space Lyngby'
-                WHEN 3395 THEN 'Creative Space Odense'
-                WHEN 3396 THEN 'Creative Space Østerbro'
-                WHEN 3398 THEN 'Creative Space Aarhus'
-                WHEN 3714 THEN 'Creative Space Vejle'
-                ELSE 'Unknown'
-            END as department,
-            SUM(b.RESTAURANTBOOKING_B_PAX) as total_pax
-        FROM DINNERBOOKING.PYTHON_IMPORT.BOOKINGS b
-        WHERE CAST(b.RESTAURANTBOOKING_B_DATE_TIME AS DATE) >= %s
-          AND CAST(b.RESTAURANTBOOKING_B_DATE_TIME AS DATE) <= %s
-          AND b.RESTAURANTBOOKING_B_STATUS = 'current'
-        GROUP BY b.RESTAURANT_ID
-        ORDER BY department        """
-        cursor.execute(query, (start_date, end_date))
-        rows = cursor.fetchall()
+        # Current period
+        cursor.execute(base_query, (start_date, end_date))
+        current_rows = cursor.fetchall()
+        current_map = {}
+        for row in current_rows:
+            current_map[row[0]] = float(row[1]) if row[1] else 0
 
+        # Benchmark period (if provided)
+        benchmark_map = {}
+        if benchmark_start and benchmark_end:
+            cursor.execute(base_query, (benchmark_start, benchmark_end))
+            benchmark_rows = cursor.fetchall()
+            for row in benchmark_rows:
+                benchmark_map[row[0]] = float(row[1]) if row[1] else 0
+
+        # Combine results
+        all_departments = sorted(set(list(current_map.keys()) + list(benchmark_map.keys())))
         results = []
-        for row in rows:
-            results.append({
-                'department': row[0],
-                'total_labor': float(row[1]) if row[1] else 0
-            })
+        for dept in all_departments:
+            current_labor = current_map.get(dept, 0)
+            benchmark_labor = benchmark_map.get(dept, 0)
+
+            entry = {
+                'department': dept,
+                'current_labor': round(current_labor, 2),
+            }
+            if benchmark_start and benchmark_end:
+                entry['benchmark_labor'] = round(benchmark_labor, 2)
+                entry['change'] = round(current_labor - benchmark_labor, 2)
+
+            results.append(entry)
 
         return jsonify({
             'data': results,
             'start_date': start_date,
             'end_date': end_date,
+            'benchmark_start': benchmark_start or None,
+            'benchmark_end': benchmark_end or None,
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        if conn:
+            conn.close()
+
+
+# =============================================================================
+# DEBUG: Check Payroll columns
+# =============================================================================
+
+@app.route('/api/debug/payroll-check', methods=['GET'])
+def debug_payroll_check():
+    """Debug: Check Payroll table structure and sample data."""
+    conn = None
+    try:
+        conn = get_snowflake_connection('PLANDAY')
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT * FROM PLANDAY.PYTHON_IMPORT.PAYROLL LIMIT 1")
+        columns = [desc[0] for desc in cursor.description]
+        row = cursor.fetchone()
+        sample = dict(zip(columns, [str(v) for v in row])) if row else {}
+
+        cursor.execute("""
+            SELECT DEPARTMENTID, COUNT(*), SUM(SALARY), SUM(WAGE)
+            FROM PLANDAY.PYTHON_IMPORT.PAYROLL
+            WHERE CAST(DATE AS DATE) >= '2025-02-08'
+              AND CAST(DATE AS DATE) <= '2025-02-16'
+            GROUP BY DEPARTMENTID
+            ORDER BY DEPARTMENTID
+        """)
+        dept_rows = cursor.fetchall()
+
+        return jsonify({
+            'columns': columns,
+            'sample_row': sample,
+            'by_department': [{'dept_id': str(r[0]), 'count': r[1], 'sum_salary': float(r[2]) if r[2] else 0, 'sum_wage': float(r[3]) if r[3] else 0} for r in dept_rows],
         })
 
     except Exception as e:
@@ -504,25 +587,12 @@ SELECT
 # DASHBOARD
 # =============================================================================
 
-from functools import wraps
-
-def check_auth(username, password):
-    return password == 'CS2026!'
-
-def requires_auth(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        auth = request.authorization
-        if not auth or not check_auth(auth.username, auth.password):
-            return ('Unauthorized', 401, {'WWW-Authenticate': 'Basic realm="Login Required"'})
-        return f(*args, **kwargs)
-    return decorated
-
 @app.route('/dashboard')
-@requires_auth
 def dashboard():
     """Serve the dashboard HTML page."""
     return send_from_directory('static', 'dashboard.html')
+
+
 # =============================================================================
 # HEALTH CHECK
 # =============================================================================
