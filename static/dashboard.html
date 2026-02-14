@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="da">
 <head>
-    <link rel="icon" type="image/png" href="/static/favicon.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Creative Space Dashboard</title>
@@ -399,6 +398,29 @@
             </div>
         </div>
 
+        <!-- OMSÆTNING VS PAX -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-title">Omsætning vs. PAX</span>
+                <div class="date-controls">
+                    <div class="date-group">
+                        <label>Periode</label>
+                        <input type="date" id="ticketStart">
+                        <input type="date" id="ticketEnd">
+                    </div>
+                    <div class="date-group">
+                        <label>Benchmark</label>
+                        <input type="date" id="ticketBenchStart">
+                        <input type="date" id="ticketBenchEnd">
+                    </div>
+                    <button class="btn-refresh" onclick="loadTicketSize()">Hent</button>
+                </div>
+            </div>
+            <div id="ticketSizeContent">
+                <div class="loading"><div class="spinner"></div>Henter omsætning vs. PAX...</div>
+            </div>
+        </div>
+
         <!-- LØN VS OMSÆTNING DAGLIGT -->
         <div class="section">
             <div class="section-header">
@@ -764,6 +786,164 @@
             }
         }
 
+        // REVENUE PER PAX (TICKET SIZE)
+        async function loadTicketSize() {
+            const el = document.getElementById('ticketSizeContent');
+            el.innerHTML = '<div class="loading"><div class="spinner"></div>Henter omsætning vs. PAX...</div>';
+
+            const startDate = document.getElementById('ticketStart').value;
+            const endDate = document.getElementById('ticketEnd').value;
+            const benchStart = document.getElementById('ticketBenchStart').value;
+            const benchEnd = document.getElementById('ticketBenchEnd').value;
+
+            try {
+                // Fetch revenue and PAX for current period
+                const revParams = new URLSearchParams({
+                    start_date: startDate,
+                    end_date: endDate,
+                    benchmark_start: benchStart,
+                    benchmark_end: benchEnd,
+                });
+
+                const paxParams = new URLSearchParams({
+                    start_date: startDate,
+                    end_date: endDate,
+                    benchmark_start: benchStart,
+                    benchmark_end: benchEnd,
+                });
+
+                const [revRes, paxRes] = await Promise.all([
+                    fetch(`${API}/api/revenue/by-department?${revParams}`),
+                    fetch(`${API}/api/pax/by-department?${paxParams}`),
+                ]);
+
+                const revJson = await revRes.json();
+                const paxJson = await paxRes.json();
+
+                if (revJson.error) throw new Error(revJson.error);
+                if (paxJson.error) throw new Error(paxJson.error);
+
+                let revData = revJson.data;
+                let paxData = paxJson.data;
+
+                // Filter by user department
+                if (!isAdmin && userDepartment !== 'all') {
+                    revData = revData.filter(r => r.department === userDepartment);
+                    paxData = paxData.filter(r => r.department === userDepartment);
+                }
+
+                // Build maps
+                const revMap = {};
+                const revBenchMap = {};
+                for (const r of revData) {
+                    revMap[r.department] = r.current_revenue || 0;
+                    if (r.benchmark_revenue !== undefined) revBenchMap[r.department] = r.benchmark_revenue || 0;
+                }
+
+                const paxMap = {};
+                const paxBenchMap = {};
+                for (const r of paxData) {
+                    paxMap[r.department] = r.current_pax || 0;
+                    if (r.benchmark_pax !== undefined) paxBenchMap[r.department] = r.benchmark_pax || 0;
+                }
+
+                const hasBenchmark = Object.keys(revBenchMap).length > 0;
+                const allDepts = [...new Set([...Object.keys(revMap), ...Object.keys(paxMap)])].sort();
+
+                let totalRev = 0, totalPax = 0, totalBenchRev = 0, totalBenchPax = 0;
+                let rows = [];
+
+                for (const dept of allDepts) {
+                    const rev = revMap[dept] || 0;
+                    const pax = paxMap[dept] || 0;
+                    const ticket = pax > 0 ? rev / pax : 0;
+                    totalRev += rev;
+                    totalPax += pax;
+
+                    const entry = { dept, ticket };
+
+                    if (hasBenchmark) {
+                        const benchRev = revBenchMap[dept] || 0;
+                        const benchPax = paxBenchMap[dept] || 0;
+                        const benchTicket = benchPax > 0 ? benchRev / benchPax : 0;
+                        totalBenchRev += benchRev;
+                        totalBenchPax += benchPax;
+                        entry.benchTicket = benchTicket;
+                        entry.changePct = benchTicket > 0 ? ((ticket - benchTicket) / benchTicket * 100) : 0;
+                    }
+                    rows.push(entry);
+                }
+
+                const totalTicket = totalPax > 0 ? totalRev / totalPax : 0;
+                const totalBenchTicket = totalBenchPax > 0 ? totalBenchRev / totalBenchPax : 0;
+                const totalChangePct = totalBenchTicket > 0 ? ((totalTicket - totalBenchTicket) / totalBenchTicket * 100) : 0;
+
+                let statsHtml = `
+                    <div class="stats-bar fade-in">
+                        <div class="stat-card">
+                            <div class="stat-label">Oms. pr. PAX</div>
+                            <div class="stat-value">${totalTicket.toFixed(1)} kr.</div>
+                        </div>
+                        ${hasBenchmark ? `
+                        <div class="stat-card">
+                            <div class="stat-label">Benchmark</div>
+                            <div class="stat-value">${totalBenchTicket.toFixed(1)} kr.</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Ændring</div>
+                            <div class="stat-value">${changeTag(totalChangePct, true)}</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+
+                let html = `
+                    <div class="table-wrapper fade-in">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Restaurant</th>
+                                    <th class="num">Oms. pr. PAX</th>
+                                    ${hasBenchmark ? '<th class="num">Benchmark</th><th class="num">Ændring</th>' : ''}
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                for (const r of rows) {
+                    html += `
+                        <tr>
+                            <td class="dept-name">${shortDept(r.dept)}</td>
+                            <td class="num">${r.ticket.toFixed(1)} kr.</td>
+                            ${hasBenchmark ? `
+                                <td class="num">${r.benchTicket.toFixed(1)} kr.</td>
+                                <td class="num">${changeTag(r.changePct, true)}</td>
+                            ` : ''}
+                        </tr>
+                    `;
+                }
+
+                html += `
+                        <tr class="summary-row">
+                            <td><strong>Total</strong></td>
+                            <td class="num">${totalTicket.toFixed(1)} kr.</td>
+                            ${hasBenchmark ? `
+                                <td class="num">${totalBenchTicket.toFixed(1)} kr.</td>
+                                <td class="num">${changeTag(totalChangePct, true)}</td>
+                            ` : ''}
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                `;
+
+                el.innerHTML = statsHtml + html;
+
+            } catch (e) {
+                el.innerHTML = `<div class="error-msg">Fejl: ${e.message}</div>`;
+            }
+        }
+
         // LABOR VS REVENUE DAILY
         async function loadLaborDaily() {
             const el = document.getElementById('laborDailyContent');
@@ -903,9 +1083,17 @@
 
             initDates();
             initLaborDates();
+
+            // Ticket size dates (same as revenue defaults)
+            document.getElementById('ticketStart').value = mondayThisWeek();
+            document.getElementById('ticketEnd').value = today();
+            document.getElementById('ticketBenchStart').value = sameDayLastYear(mondayThisWeek());
+            document.getElementById('ticketBenchEnd').value = sameDayLastYear(today());
+
             loadPaxToday();
             loadRevenue();
             loadPaxBenchmark();
+            loadTicketSize();
             loadLaborDaily();
         }
 
