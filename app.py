@@ -459,17 +459,23 @@ def labor_by_department():
         cursor = conn.cursor()
 
         query = """
-            SELECT 
-                r.NAME as department,
-                SUM(p.WAGE) as total_labor
-            FROM PLANDAY.PYTHON_IMPORT.PAYROLL p
-            JOIN DINNERBOOKING.PYTHON_IMPORT.RESTAURANTS r 
-                ON p.DEPARTMENTID = r.ID
-            WHERE CAST(p.DATE AS DATE) >= %s
-              AND CAST(p.DATE AS DATE) <= %s
-            GROUP BY r.NAME
-            ORDER BY r.NAME
-        """
+SELECT 
+            CASE b.RESTAURANT_ID
+                WHEN '2070' THEN 'Creative Space Frederiksberg'
+                WHEN '3394' THEN 'Creative Space Lyngby'
+                WHEN '3395' THEN 'Creative Space Odense'
+                WHEN '3396' THEN 'Creative Space Østerbro'
+                WHEN '3398' THEN 'Creative Space Aarhus'
+                WHEN '3714' THEN 'Creative Space Vejle'
+                ELSE 'Unknown (' || b.RESTAURANT_ID || ')'
+            END as department,
+            SUM(b.RESTAURANTBOOKING_B_PAX) as total_pax
+        FROM DINNERBOOKING.PYTHON_IMPORT.BOOKINGS b
+        WHERE CAST(b.RESTAURANTBOOKING_B_DATE_TIME AS DATE) >= %s
+          AND CAST(b.RESTAURANTBOOKING_B_DATE_TIME AS DATE) <= %s
+          AND b.RESTAURANTBOOKING_B_STATUS = 'current'
+        GROUP BY b.RESTAURANT_ID
+        ORDER BY department        """
         cursor.execute(query, (start_date, end_date))
         rows = cursor.fetchall()
 
