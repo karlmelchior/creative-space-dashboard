@@ -778,6 +778,56 @@ def debug_absence_accounts():
             conn.close()
 
 
+@app.route('/api/debug/shift-types', methods=['GET'])
+def debug_shift_types():
+    """Debug: Fetch shift types from Planday API to map IDs to names."""
+    try:
+        # Get Planday token
+        token_url = "https://id.planday.com/connect/token"
+        token_payload = 'client_id=9ff9461c-a729-4e49-8ae8-d231e2123263&grant_type=refresh_token&refresh_token=uAURbS3-hUKWtpuRbmTWBA'
+        token_headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        token_res = http_requests.post(token_url, headers=token_headers, data=token_payload)
+        access_token = token_res.json()['access_token']
+
+        # Get shift types
+        url = "https://openapi.planday.com/scheduling/v1/shifttypes"
+        headers = {
+            'Authorization': f'Bearer {access_token}',
+            'X-ClientId': '9ff9461c-a729-4e49-8ae8-d231e2123263'
+        }
+        res = http_requests.get(url, headers=headers)
+        data = res.json()
+
+        return jsonify(data)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/debug/employee-groups', methods=['GET'])
+def debug_employee_groups():
+    """Debug: Fetch employee groups from Planday API."""
+    try:
+        token_url = "https://id.planday.com/connect/token"
+        token_payload = 'client_id=9ff9461c-a729-4e49-8ae8-d231e2123263&grant_type=refresh_token&refresh_token=uAURbS3-hUKWtpuRbmTWBA'
+        token_headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        token_res = http_requests.post(token_url, headers=token_headers, data=token_payload)
+        access_token = token_res.json()['access_token']
+
+        url = "https://openapi.planday.com/hr/v1.0/employeegroups"
+        headers = {
+            'Authorization': f'Bearer {access_token}',
+            'X-ClientId': '9ff9461c-a729-4e49-8ae8-d231e2123263'
+        }
+        res = http_requests.get(url, headers=headers)
+        data = res.json()
+
+        return jsonify(data)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/debug/shifts-check', methods=['GET'])
 def debug_shifts_check():
     """Debug: Check Shifts table structure, statuses and sample sick shifts."""
