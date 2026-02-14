@@ -60,14 +60,12 @@
             padding-bottom: 24px;
             border-bottom: 1px solid var(--border);
         }
-
         header h1 {
             font-size: 22px;
             font-weight: 700;
             letter-spacing: -0.02em;
             color: var(--accent);
         }
-
         header .timestamp {
             font-size: 13px;
             color: var(--text-muted);
@@ -87,9 +85,7 @@
         }
 
         /* Category groups */
-        .category {
-            margin-bottom: 48px;
-        }
+        .category { margin-bottom: 48px; }
 
         .category-title {
             font-size: 11px;
@@ -102,7 +98,6 @@
             align-items: center;
             gap: 12px;
         }
-
         .category-title::after {
             content: '';
             flex: 1;
@@ -110,18 +105,26 @@
             background: var(--border);
         }
 
-        /* Sections */
-        .section {
-            margin-bottom: 40px;
-        }
+        /* Sections - collapsible */
+        .section { margin-bottom: 24px; }
 
         .section-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 16px;
+            margin-bottom: 0;
             flex-wrap: wrap;
             gap: 12px;
+            cursor: pointer;
+            padding: 12px 0;
+            user-select: none;
+        }
+        .section-header:hover .section-title { color: var(--text); }
+
+        .section-title-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .section-title {
@@ -130,6 +133,38 @@
             text-transform: uppercase;
             letter-spacing: 0.08em;
             color: var(--text-muted);
+            transition: color 0.15s;
+        }
+
+        .collapse-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease;
+            color: var(--text-muted);
+        }
+        .collapse-icon svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        .section.collapsed .collapse-icon { transform: rotate(-90deg); }
+
+        .section-summary { margin-top: 12px; margin-bottom: 12px; }
+
+        .section-body {
+            overflow: hidden;
+            transition: max-height 0.4s ease, opacity 0.3s ease;
+            max-height: 3000px;
+            opacity: 1;
+        }
+        .section.collapsed .section-body {
+            max-height: 0;
+            opacity: 0;
         }
 
         /* Date pickers */
@@ -139,13 +174,11 @@
             align-items: center;
             flex-wrap: wrap;
         }
-
         .date-group {
             display: flex;
             align-items: center;
             gap: 6px;
         }
-
         .date-group label {
             font-size: 11px;
             color: var(--text-muted);
@@ -164,14 +197,8 @@
             outline: none;
             transition: border-color 0.2s;
         }
-
-        input[type="date"]:focus, select.filter-select:focus {
-            border-color: var(--accent);
-        }
-
-        input[type="date"]::-webkit-calendar-picker-indicator {
-            filter: invert(0.7);
-        }
+        input[type="date"]:focus, select.filter-select:focus { border-color: var(--accent); }
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); }
 
         /* Shortcut buttons */
         .shortcut-btn {
@@ -187,17 +214,8 @@
             letter-spacing: 0.02em;
             white-space: nowrap;
         }
-
-        .shortcut-btn:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-
-        .shortcut-btn.active {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: #fff;
-        }
+        .shortcut-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .shortcut-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
         /* Tables */
         .table-wrapper {
@@ -206,18 +224,10 @@
             border-radius: 10px;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
+            margin-top: 12px;
         }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 500px;
-        }
-
-        table.wide-table {
-            min-width: 800px;
-        }
-
+        table { width: 100%; border-collapse: collapse; min-width: 500px; }
+        table.wide-table { min-width: 800px; }
         th {
             font-size: 11px;
             font-weight: 600;
@@ -232,9 +242,7 @@
             top: 0;
             white-space: nowrap;
         }
-
         th.num { text-align: right; }
-
         td {
             padding: 12px 16px;
             font-size: 14px;
@@ -242,11 +250,8 @@
             font-variant-numeric: tabular-nums;
             white-space: nowrap;
         }
-
         td.num { text-align: right; font-weight: 500; }
-
         tr:last-child td { border-bottom: none; }
-
         tr:hover td { background: var(--surface-hover); }
 
         .change-positive {
@@ -257,7 +262,6 @@
             font-size: 13px;
             font-weight: 500;
         }
-
         .change-negative {
             color: var(--red);
             background: var(--red-bg);
@@ -266,13 +270,8 @@
             font-size: 13px;
             font-weight: 500;
         }
+        .change-zero { color: var(--text-muted); font-size: 13px; }
 
-        .change-zero {
-            color: var(--text-muted);
-            font-size: 13px;
-        }
-
-        /* Summary row */
         .summary-row td {
             border-top: 2px solid var(--border);
             font-weight: 600;
@@ -287,68 +286,20 @@
             background: var(--border);
             border-radius: 10px;
             overflow: hidden;
-            margin-bottom: 16px;
         }
-
-        .stat-card {
-            flex: 1;
-            background: var(--surface);
-            padding: 20px 20px;
-        }
-
+        .stat-card { flex: 1; background: var(--surface); padding: 20px; }
         .stat-card:first-child { border-radius: 10px 0 0 10px; }
         .stat-card:last-child { border-radius: 0 10px 10px 0; }
-
-        .stat-label {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: var(--text-muted);
-            margin-bottom: 6px;
-        }
-
-        .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
-
-        .stat-sub {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 2px;
-        }
+        .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 6px; }
+        .stat-value { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+        .stat-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
         /* Loading state */
-        .loading {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-            color: var(--text-muted);
-            font-size: 13px;
-        }
-
-        .spinner {
-            width: 16px;
-            height: 16px;
-            border: 2px solid var(--border);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-            margin-right: 10px;
-        }
-
+        .loading { display: flex; align-items: center; justify-content: center; padding: 40px; color: var(--text-muted); font-size: 13px; }
+        .spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 10px; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .error-msg { color: var(--red); font-size: 13px; padding: 20px; text-align: center; }
 
-        .error-msg {
-            color: var(--red);
-            font-size: 13px;
-            padding: 20px;
-            text-align: center;
-        }
-
-        /* Refresh button */
         .btn-refresh {
             background: var(--surface);
             border: 1px solid var(--border);
@@ -359,39 +310,58 @@
             font-size: 12px;
             cursor: pointer;
             transition: all 0.2s;
-            letter-spacing: 0.02em;
         }
+        .btn-refresh:hover { border-color: var(--accent); color: var(--text); }
 
-        .btn-refresh:hover {
-            border-color: var(--accent);
-            color: var(--text);
-        }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Fade in animation */
-        .fade-in {
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(4px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .dept-name {
-            max-width: 200px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        /* Sickness cell coloring */
+        .dept-name { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .sick-zero { color: #ccc; }
-        .sick-high { color: var(--red); font-weight: 600; }
+        .col-total { border-left: 2px solid var(--border); font-weight: 600; }
 
-        .col-total {
-            border-left: 2px solid var(--border);
-            font-weight: 600;
+        /* Sickness chart */
+        .chart-wrapper {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 24px;
+            margin-top: 12px;
         }
+        .chart-legend { display: flex; gap: 24px; margin-bottom: 20px; font-size: 13px; }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+        .chart-container { display: flex; gap: 8px; }
+        .y-axis { display: flex; flex-direction: column; justify-content: space-between; height: 200px; }
+        .y-label { font-size: 10px; color: var(--text-muted); text-align: right; min-width: 28px; }
+        .chart-area {
+            display: flex; align-items: flex-end; gap: 6px; height: 200px;
+            border-bottom: 1px solid var(--border); position: relative; flex: 1;
+        }
+        .chart-area::before {
+            content: ''; position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+            background: repeating-linear-gradient(to bottom, transparent, transparent calc(25% - 1px), #eee calc(25% - 1px), #eee 25%);
+            pointer-events: none;
+        }
+        .chart-month-group { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; z-index: 1; }
+        .chart-bars { display: flex; align-items: flex-end; gap: 3px; height: 100%; width: 100%; justify-content: center; }
+        .chart-bar {
+            width: 20px; min-height: 2px; border-radius: 4px 4px 0 0;
+            transition: height 0.5s ease; position: relative; cursor: default;
+        }
+        .chart-bar.current { background: var(--accent); }
+        .chart-bar.previous { background: #d4d0cc; }
+        .chart-bar:hover { opacity: 0.85; }
+        .chart-bar-label {
+            position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+            font-size: 10px; font-weight: 600; white-space: nowrap;
+            opacity: 0; transition: opacity 0.15s; pointer-events: none;
+        }
+        .chart-bar:hover .chart-bar-label { opacity: 1; }
+        .chart-bar.current .chart-bar-label { color: var(--accent); }
+        .chart-bar.previous .chart-bar-label { color: #999; }
+        .chart-month-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 8px; font-weight: 500; }
+        .chart-month-label.future { color: #ccc; }
 
         /* Mobile responsive */
         @media (max-width: 900px) {
@@ -406,8 +376,8 @@
             .dept-header { font-size: 22px; }
             header h1 { font-size: 18px; }
             td, th { padding: 10px 10px; font-size: 13px; }
+            .chart-bar { width: 14px; }
         }
-
         @media (max-width: 600px) {
             .date-group { flex-wrap: wrap; }
             input[type="date"] { max-width: 130px; font-size: 12px; }
@@ -422,7 +392,6 @@
             <span class="timestamp" id="lastUpdate"></span>
         </header>
 
-        <!-- Department header (shown for location logins) -->
         <div class="dept-header" id="deptHeader"></div>
 
         <!-- ============================================ -->
@@ -431,22 +400,31 @@
         <div class="category">
             <div class="category-title">Daglig drift</div>
 
-            <!-- PAX I DAG -->
-            <div class="section">
-                <div class="section-header">
-                    <span class="section-title">PAX i dag &mdash; <span id="todayDate"></span></span>
-                    <button class="btn-refresh" onclick="loadPaxToday()">Opdater live</button>
+            <!-- PAX I DAG (starts expanded) -->
+            <div class="section" id="sec-pax">
+                <div class="section-header" onclick="toggleSection('sec-pax')">
+                    <div class="section-title-row">
+                        <div class="collapse-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
+                        <span class="section-title">PAX i dag &mdash; <span id="todayDate"></span></span>
+                    </div>
+                    <button class="btn-refresh" onclick="event.stopPropagation(); loadPaxToday()">Opdater live</button>
                 </div>
-                <div id="paxTodayContent">
-                    <div class="loading"><div class="spinner"></div>Henter live PAX...</div>
+                <div class="section-summary" id="paxTodayStats"></div>
+                <div class="section-body">
+                    <div id="paxTodayContent">
+                        <div class="loading"><div class="spinner"></div>Henter live PAX...</div>
+                    </div>
                 </div>
             </div>
 
-            <!-- LØN VS OMSÆTNING DAGLIGT -->
-            <div class="section">
-                <div class="section-header">
-                    <span class="section-title">Løn vs. omsætning</span>
-                    <div class="date-controls">
+            <!-- LØN VS OMSÆTNING (starts collapsed) -->
+            <div class="section collapsed" id="sec-labor">
+                <div class="section-header" onclick="toggleSection('sec-labor')">
+                    <div class="section-title-row">
+                        <div class="collapse-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
+                        <span class="section-title">Løn vs. omsætning</span>
+                    </div>
+                    <div class="date-controls" onclick="event.stopPropagation()">
                         <button class="shortcut-btn active" onclick="setLaborShortcut('week', this)">Denne uge</button>
                         <button class="shortcut-btn" onclick="setLaborShortcut('month', this)">Denne måned</button>
                         <div class="date-group">
@@ -472,8 +450,11 @@
                         <button class="btn-refresh" onclick="loadLaborDaily()">Hent</button>
                     </div>
                 </div>
-                <div id="laborDailyContent">
-                    <div class="loading"><div class="spinner"></div>Henter løn og omsætning...</div>
+                <div class="section-summary" id="laborDailyStats"></div>
+                <div class="section-body">
+                    <div id="laborDailyContent">
+                        <div class="loading"><div class="spinner"></div>Henter løn og omsætning...</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -484,11 +465,14 @@
         <div class="category">
             <div class="category-title">Performance</div>
 
-            <!-- OMSÆTNING -->
-            <div class="section">
-                <div class="section-header">
-                    <span class="section-title">Omsætning ex. moms</span>
-                    <div class="date-controls">
+            <!-- OMSÆTNING (collapsed) -->
+            <div class="section collapsed" id="sec-rev">
+                <div class="section-header" onclick="toggleSection('sec-rev')">
+                    <div class="section-title-row">
+                        <div class="collapse-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
+                        <span class="section-title">Omsætning ex. moms</span>
+                    </div>
+                    <div class="date-controls" onclick="event.stopPropagation()">
                         <button class="shortcut-btn active" onclick="setRevenueShortcut('week', this)">Denne uge</button>
                         <button class="shortcut-btn" onclick="setRevenueShortcut('month', this)">Denne måned</button>
                         <div class="date-group">
@@ -504,17 +488,22 @@
                         <button class="btn-refresh" onclick="loadRevenue()">Hent</button>
                     </div>
                 </div>
-                <div id="revenueStats"></div>
-                <div id="revenueContent">
-                    <div class="loading"><div class="spinner"></div>Henter omsætning...</div>
+                <div class="section-summary" id="revenueStats"></div>
+                <div class="section-body">
+                    <div id="revenueContent">
+                        <div class="loading"><div class="spinner"></div>Henter omsætning...</div>
+                    </div>
                 </div>
             </div>
 
-            <!-- PAX BENCHMARK -->
-            <div class="section">
-                <div class="section-header">
-                    <span class="section-title">PAX sammenlignet</span>
-                    <div class="date-controls">
+            <!-- PAX BENCHMARK (collapsed) -->
+            <div class="section collapsed" id="sec-paxb">
+                <div class="section-header" onclick="toggleSection('sec-paxb')">
+                    <div class="section-title-row">
+                        <div class="collapse-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
+                        <span class="section-title">PAX sammenlignet</span>
+                    </div>
+                    <div class="date-controls" onclick="event.stopPropagation()">
                         <button class="shortcut-btn active" onclick="setPaxShortcut('week', this)">Denne uge</button>
                         <button class="shortcut-btn" onclick="setPaxShortcut('month', this)">Denne måned</button>
                         <div class="date-group">
@@ -530,16 +519,22 @@
                         <button class="btn-refresh" onclick="loadPaxBenchmark()">Hent</button>
                     </div>
                 </div>
-                <div id="paxBenchmarkContent">
-                    <div class="loading"><div class="spinner"></div>Henter PAX...</div>
+                <div class="section-summary" id="paxBenchmarkStats"></div>
+                <div class="section-body">
+                    <div id="paxBenchmarkContent">
+                        <div class="loading"><div class="spinner"></div>Henter PAX...</div>
+                    </div>
                 </div>
             </div>
 
-            <!-- OMSÆTNING VS PAX -->
-            <div class="section">
-                <div class="section-header">
-                    <span class="section-title">Omsætning vs. PAX</span>
-                    <div class="date-controls">
+            <!-- TICKET SIZE (collapsed) -->
+            <div class="section collapsed" id="sec-ticket">
+                <div class="section-header" onclick="toggleSection('sec-ticket')">
+                    <div class="section-title-row">
+                        <div class="collapse-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
+                        <span class="section-title">Omsætning vs. PAX</span>
+                    </div>
+                    <div class="date-controls" onclick="event.stopPropagation()">
                         <button class="shortcut-btn active" onclick="setTicketShortcut('week', this)">Denne uge</button>
                         <button class="shortcut-btn" onclick="setTicketShortcut('month', this)">Denne måned</button>
                         <div class="date-group">
@@ -555,8 +550,11 @@
                         <button class="btn-refresh" onclick="loadTicketSize()">Hent</button>
                     </div>
                 </div>
-                <div id="ticketSizeContent">
-                    <div class="loading"><div class="spinner"></div>Henter omsætning vs. PAX...</div>
+                <div class="section-summary" id="ticketSizeStats"></div>
+                <div class="section-body">
+                    <div id="ticketSizeContent">
+                        <div class="loading"><div class="spinner"></div>Henter omsætning vs. PAX...</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -567,11 +565,14 @@
         <div class="category">
             <div class="category-title">Medarbejdere</div>
 
-            <!-- SYGDOM -->
-            <div class="section">
-                <div class="section-header">
-                    <span class="section-title">Sygdom</span>
-                    <div class="date-controls">
+            <!-- SYGDOM (collapsed) -->
+            <div class="section collapsed" id="sec-sick">
+                <div class="section-header" onclick="toggleSection('sec-sick')">
+                    <div class="section-title-row">
+                        <div class="collapse-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
+                        <span class="section-title">Sygdom</span>
+                    </div>
+                    <div class="date-controls" onclick="event.stopPropagation()">
                         <div class="date-group">
                             <label>År</label>
                             <select id="sicknessYear" class="filter-select"></select>
@@ -610,9 +611,12 @@
                         <button class="btn-refresh" onclick="loadSickness()">Hent</button>
                     </div>
                 </div>
-                <div id="sicknessStats"></div>
-                <div id="sicknessContent">
-                    <div class="loading"><div class="spinner"></div>Henter sygdomsdata...</div>
+                <div class="section-summary" id="sicknessStats"></div>
+                <div class="section-body">
+                    <div id="sicknessChart"></div>
+                    <div id="sicknessContent">
+                        <div class="loading"><div class="spinner"></div>Henter sygdomsdata...</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -620,62 +624,59 @@
 
     <script>
         const API = 'https://web-production-bf4c.up.railway.app';
-        const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'Maj', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
-        const MONTH_NAMES_LONG = ['Januar', 'Februar', 'Marts', 'April', 'Maj', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'December'];
+        const MONTH_NAMES = ['Jan','Feb','Mar','Apr','Maj','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
+        const MONTH_NAMES_LONG = ['Januar','Februar','Marts','April','Maj','Juni','Juli','August','September','Oktober','November','December'];
+
+        // ===================== COLLAPSE =====================
+        function toggleSection(id) { document.getElementById(id).classList.toggle('collapsed'); }
 
         // ===================== DATE HELPERS =====================
-
-        function today() {
-            return new Date().toISOString().split('T')[0];
-        }
+        function today() { return new Date().toISOString().split('T')[0]; }
+        function toDateStr(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 
         function mondayThisWeek() {
-            const d = new Date();
-            const day = d.getDay();
-            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-            return new Date(d.getFullYear(), d.getMonth(), diff).toISOString().split('T')[0];
+            const d = new Date(); const day = d.getDay();
+            const diff = day === 0 ? -6 : 1 - day;
+            return toDateStr(new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff));
         }
-
         function sundayThisWeek() {
-            const d = new Date();
-            const day = d.getDay();
-            const diff = d.getDate() - day + (day === 0 ? 0 : 7);
-            return new Date(d.getFullYear(), d.getMonth(), diff).toISOString().split('T')[0];
+            const d = new Date(); const day = d.getDay();
+            const diff = day === 0 ? 0 : 7 - day;
+            return toDateStr(new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff));
         }
+        function firstDayThisMonth() { const d = new Date(); return toDateStr(new Date(d.getFullYear(), d.getMonth(), 1)); }
+        function lastDayThisMonth() { const d = new Date(); return toDateStr(new Date(d.getFullYear(), d.getMonth()+1, 0)); }
 
-        function firstDayThisMonth() {
-            const d = new Date();
-            return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
+        function getISOWeek(date) {
+            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+            return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
         }
-
-        function lastDayThisMonth() {
-            const d = new Date();
-            return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split('T')[0];
+        function mondayOfISOWeek(week, year) {
+            const jan4 = new Date(year, 0, 4);
+            const dayOfWeek = jan4.getDay() || 7;
+            const mon1 = new Date(year, 0, 4 - dayOfWeek + 1);
+            const target = new Date(mon1);
+            target.setDate(target.getDate() + (week - 1) * 7);
+            return target;
         }
-
+        function sameWeekLastYear(monDateStr) {
+            const monDate = new Date(monDateStr);
+            const week = getISOWeek(monDate);
+            const lastYear = monDate.getFullYear() - 1;
+            const lyMon = mondayOfISOWeek(week, lastYear);
+            const lySun = new Date(lyMon); lySun.setDate(lySun.getDate() + 6);
+            return { start: toDateStr(lyMon), end: toDateStr(lySun) };
+        }
         function sameDayLastYear(dateStr) {
-            const d = new Date(dateStr);
-            d.setFullYear(d.getFullYear() - 1);
-            return d.toISOString().split('T')[0];
+            const d = new Date(dateStr); d.setFullYear(d.getFullYear() - 1); return toDateStr(d);
         }
 
         // ===================== FORMAT HELPERS =====================
-
-        function formatNum(n) {
-            if (n == null) return '—';
-            return Math.round(n).toLocaleString('da-DK');
-        }
-
-        function formatCurrency(n) {
-            if (n == null) return '—';
-            return Math.round(n).toLocaleString('da-DK') + ' kr.';
-        }
-
-        function formatPct(n) {
-            if (n == null) return '—';
-            return n.toFixed(1) + '%';
-        }
-
+        function formatNum(n) { if (n == null) return '—'; return Math.round(n).toLocaleString('da-DK'); }
+        function formatCurrency(n) { if (n == null) return '—'; return Math.round(n).toLocaleString('da-DK') + ' kr.'; }
+        function formatPct(n) { if (n == null) return '—'; return n.toFixed(1) + '%'; }
         function changeTag(value, isPercent = false) {
             if (value == null || value === 0) return '<span class="change-zero">0</span>';
             const cls = value > 0 ? 'change-positive' : 'change-negative';
@@ -683,529 +684,330 @@
             const display = isPercent ? formatPct(value) : formatNum(value);
             return `<span class="${cls}">${prefix}${display}</span>`;
         }
-
-        function shortDept(name) {
-            return name.replace('Creative Space ', '');
-        }
+        function shortDept(name) { return name.replace('Creative Space ', ''); }
 
         // ===================== SHORTCUT BUTTONS =====================
-
         function activateShortcut(btn) {
-            const siblings = btn.parentElement.querySelectorAll('.shortcut-btn');
-            siblings.forEach(b => b.classList.remove('active'));
+            btn.parentElement.querySelectorAll('.shortcut-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
         }
-
-        function setWeekDates(startId, endId, benchStartId, benchEndId) {
-            const mon = mondayThisWeek();
-            const sun = sundayThisWeek();
-            document.getElementById(startId).value = mon;
-            document.getElementById(endId).value = sun;
-            if (benchStartId) {
-                document.getElementById(benchStartId).value = sameDayLastYear(mon);
-                document.getElementById(benchEndId).value = sameDayLastYear(sun);
-            }
+        function setWeekDates(sId, eId, bsId, beId) {
+            const m = mondayThisWeek(), s = sundayThisWeek();
+            document.getElementById(sId).value = m; document.getElementById(eId).value = s;
+            if (bsId) { const ly = sameWeekLastYear(m); document.getElementById(bsId).value = ly.start; document.getElementById(beId).value = ly.end; }
         }
-
-        function setMonthDates(startId, endId, benchStartId, benchEndId) {
-            const first = firstDayThisMonth();
-            const last = lastDayThisMonth();
-            document.getElementById(startId).value = first;
-            document.getElementById(endId).value = last;
-            if (benchStartId) {
-                document.getElementById(benchStartId).value = sameDayLastYear(first);
-                document.getElementById(benchEndId).value = sameDayLastYear(last);
-            }
+        function setMonthDates(sId, eId, bsId, beId) {
+            const f = firstDayThisMonth(), l = lastDayThisMonth();
+            document.getElementById(sId).value = f; document.getElementById(eId).value = l;
+            if (bsId) { document.getElementById(bsId).value = sameDayLastYear(f); document.getElementById(beId).value = sameDayLastYear(l); }
         }
-
-        function setRevenueShortcut(type, btn) {
+        function setRevenueShortcut(t, btn) { activateShortcut(btn); t==='week' ? setWeekDates('revStart','revEnd','revBenchStart','revBenchEnd') : setMonthDates('revStart','revEnd','revBenchStart','revBenchEnd'); loadRevenue(); }
+        function setPaxShortcut(t, btn) { activateShortcut(btn); t==='week' ? setWeekDates('paxStart','paxEnd','paxBenchStart','paxBenchEnd') : setMonthDates('paxStart','paxEnd','paxBenchStart','paxBenchEnd'); loadPaxBenchmark(); }
+        function setTicketShortcut(t, btn) { activateShortcut(btn); t==='week' ? setWeekDates('ticketStart','ticketEnd','ticketBenchStart','ticketBenchEnd') : setMonthDates('ticketStart','ticketEnd','ticketBenchStart','ticketBenchEnd'); loadTicketSize(); }
+        function setLaborShortcut(t, btn) {
             activateShortcut(btn);
-            if (type === 'week') setWeekDates('revStart', 'revEnd', 'revBenchStart', 'revBenchEnd');
-            else setMonthDates('revStart', 'revEnd', 'revBenchStart', 'revBenchEnd');
-            loadRevenue();
-        }
-
-        function setPaxShortcut(type, btn) {
-            activateShortcut(btn);
-            if (type === 'week') setWeekDates('paxStart', 'paxEnd', 'paxBenchStart', 'paxBenchEnd');
-            else setMonthDates('paxStart', 'paxEnd', 'paxBenchStart', 'paxBenchEnd');
-            loadPaxBenchmark();
-        }
-
-        function setTicketShortcut(type, btn) {
-            activateShortcut(btn);
-            if (type === 'week') setWeekDates('ticketStart', 'ticketEnd', 'ticketBenchStart', 'ticketBenchEnd');
-            else setMonthDates('ticketStart', 'ticketEnd', 'ticketBenchStart', 'ticketBenchEnd');
-            loadTicketSize();
-        }
-
-        function setLaborShortcut(type, btn) {
-            activateShortcut(btn);
-            if (type === 'week') {
-                document.getElementById('laborStart').value = mondayThisWeek();
-                document.getElementById('laborEnd').value = sundayThisWeek();
-            } else {
-                document.getElementById('laborStart').value = firstDayThisMonth();
-                document.getElementById('laborEnd').value = lastDayThisMonth();
-            }
+            if (t==='week') { document.getElementById('laborStart').value = mondayThisWeek(); document.getElementById('laborEnd').value = sundayThisWeek(); }
+            else { document.getElementById('laborStart').value = firstDayThisMonth(); document.getElementById('laborEnd').value = lastDayThisMonth(); }
             loadLaborDaily();
         }
 
-        // ===================== DEFAULT DATES =====================
-
+        // ===================== INIT DATES =====================
         function initDates() {
-            const mon = mondayThisWeek();
-            const sun = sundayThisWeek();
-            const monLY = sameDayLastYear(mon);
-            const sunLY = sameDayLastYear(sun);
-
-            document.getElementById('revStart').value = mon;
-            document.getElementById('revEnd').value = sun;
-            document.getElementById('revBenchStart').value = monLY;
-            document.getElementById('revBenchEnd').value = sunLY;
-
-            document.getElementById('paxStart').value = mon;
-            document.getElementById('paxEnd').value = sun;
-            document.getElementById('paxBenchStart').value = monLY;
-            document.getElementById('paxBenchEnd').value = sunLY;
-
-            document.getElementById('ticketStart').value = mon;
-            document.getElementById('ticketEnd').value = sun;
-            document.getElementById('ticketBenchStart').value = monLY;
-            document.getElementById('ticketBenchEnd').value = sunLY;
-
-            document.getElementById('laborStart').value = mon;
-            document.getElementById('laborEnd').value = sun;
-
+            const m = mondayThisWeek(), s = sundayThisWeek(), ly = sameWeekLastYear(m);
+            ['revStart','paxStart','ticketStart'].forEach(id => document.getElementById(id).value = m);
+            ['revEnd','paxEnd','ticketEnd'].forEach(id => document.getElementById(id).value = s);
+            ['revBenchStart','paxBenchStart','ticketBenchStart'].forEach(id => document.getElementById(id).value = ly.start);
+            ['revBenchEnd','paxBenchEnd','ticketBenchEnd'].forEach(id => document.getElementById(id).value = ly.end);
+            document.getElementById('laborStart').value = m;
+            document.getElementById('laborEnd').value = s;
             document.getElementById('todayDate').textContent = new Date().toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-
-            // Sickness year dropdown
             const yearSelect = document.getElementById('sicknessYear');
-            const currentYear = new Date().getFullYear();
-            for (let y = currentYear; y >= 2020; y--) {
-                const opt = document.createElement('option');
-                opt.value = y;
-                opt.textContent = y;
-                yearSelect.appendChild(opt);
-            }
+            const cy = new Date().getFullYear();
+            for (let y = cy; y >= 2020; y--) { const o = document.createElement('option'); o.value = y; o.textContent = y; yearSelect.appendChild(o); }
         }
 
         // ===================== PAX TODAY =====================
-
         async function loadPaxToday() {
             const el = document.getElementById('paxTodayContent');
-            el.innerHTML = '<div class="loading"><div class="spinner"></div>Henter live PAX fra DinnerBooking...</div>';
-
+            const statsEl = document.getElementById('paxTodayStats');
+            el.innerHTML = '<div class="loading"><div class="spinner"></div>Henter live PAX...</div>';
+            statsEl.innerHTML = '';
             try {
                 const res = await fetch(`${API}/api/pax/live?date=${today()}`);
                 const json = await res.json();
-
                 if (json.error) throw new Error(json.error);
-
                 let data = json.data;
-                if (!isAdmin && userDepartment !== 'all') {
-                    data = data.filter(r => r.department === userDepartment);
-                }
+                if (!isAdmin && userDepartment !== 'all') data = data.filter(r => r.department === userDepartment);
                 const totalPax = data.reduce((s, r) => s + r.pax, 0);
                 const totalBookings = data.reduce((s, r) => s + r.bookings, 0);
 
-                let html = `
-                    <div class="stats-bar fade-in">
-                        <div class="stat-card">
-                            <div class="stat-label">Total PAX</div>
-                            <div class="stat-value">${formatNum(totalPax)}</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Bookings</div>
-                            <div class="stat-value">${formatNum(totalBookings)}</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Gns. PAX/booking</div>
-                            <div class="stat-value">${totalBookings > 0 ? (totalPax / totalBookings).toFixed(1) : '—'}</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Kilde</div>
-                            <div class="stat-value" style="font-size:13px; color: var(--green);">Live</div>
-                            <div class="stat-sub">${json.fetched_at}</div>
-                        </div>
-                    </div>
-                    <div class="table-wrapper fade-in">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Restaurant</th>
-                                    <th class="num">PAX</th>
-                                    <th class="num">Bookings</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                `;
+                statsEl.innerHTML = `<div class="stats-bar fade-in">
+                    <div class="stat-card"><div class="stat-label">Total PAX</div><div class="stat-value">${formatNum(totalPax)}</div></div>
+                    <div class="stat-card"><div class="stat-label">Bookings</div><div class="stat-value">${formatNum(totalBookings)}</div></div>
+                    <div class="stat-card"><div class="stat-label">Gns. PAX/booking</div><div class="stat-value">${totalBookings > 0 ? (totalPax/totalBookings).toFixed(1) : '—'}</div></div>
+                    <div class="stat-card"><div class="stat-label">Kilde</div><div class="stat-value" style="font-size:13px;color:var(--green);">Live</div><div class="stat-sub">${json.fetched_at}</div></div>
+                </div>`;
 
-                for (const r of data.sort((a, b) => b.pax - a.pax)) {
-                    html += `<tr><td class="dept-name">${shortDept(r.department)}</td><td class="num">${formatNum(r.pax)}</td><td class="num">${formatNum(r.bookings)}</td></tr>`;
-                }
-
+                let html = `<div class="table-wrapper fade-in"><table><thead><tr><th>Restaurant</th><th class="num">PAX</th><th class="num">Bookings</th></tr></thead><tbody>`;
+                for (const r of data.sort((a,b) => b.pax - a.pax)) html += `<tr><td class="dept-name">${shortDept(r.department)}</td><td class="num">${formatNum(r.pax)}</td><td class="num">${formatNum(r.bookings)}</td></tr>`;
                 html += `<tr class="summary-row"><td><strong>Total</strong></td><td class="num">${formatNum(totalPax)}</td><td class="num">${formatNum(totalBookings)}</td></tr></tbody></table></div>`;
                 el.innerHTML = html;
                 document.getElementById('lastUpdate').textContent = 'Sidst opdateret: ' + new Date().toLocaleTimeString('da-DK');
-
-            } catch (e) {
-                el.innerHTML = `<div class="error-msg">Fejl: ${e.message}</div>`;
-            }
+            } catch (e) { el.innerHTML = `<div class="error-msg">Fejl: ${e.message}</div>`; }
         }
 
         // ===================== REVENUE =====================
-
         async function loadRevenue() {
             const el = document.getElementById('revenueContent');
             const statsEl = document.getElementById('revenueStats');
-            el.innerHTML = '<div class="loading"><div class="spinner"></div>Henter omsætning...</div>';
-            statsEl.innerHTML = '';
-
-            const params = new URLSearchParams({
-                start_date: document.getElementById('revStart').value,
-                end_date: document.getElementById('revEnd').value,
-                benchmark_start: document.getElementById('revBenchStart').value,
-                benchmark_end: document.getElementById('revBenchEnd').value,
-            });
-
+            el.innerHTML = '<div class="loading"><div class="spinner"></div>Henter omsætning...</div>'; statsEl.innerHTML = '';
+            const params = new URLSearchParams({ start_date: document.getElementById('revStart').value, end_date: document.getElementById('revEnd').value, benchmark_start: document.getElementById('revBenchStart').value, benchmark_end: document.getElementById('revBenchEnd').value });
             try {
                 const res = await fetch(`${API}/api/revenue/by-department?${params}`);
-                const json = await res.json();
-                if (json.error) throw new Error(json.error);
-
+                const json = await res.json(); if (json.error) throw new Error(json.error);
                 let data = json.data;
-                if (!isAdmin && userDepartment !== 'all') {
-                    data = data.filter(r => r.department === userDepartment);
-                }
-                const hasBenchmark = data.length > 0 && data[0].benchmark_revenue !== undefined;
-                const totalCurrent = data.reduce((s, r) => s + (r.current_revenue || 0), 0);
-                const totalBenchmark = hasBenchmark ? data.reduce((s, r) => s + (r.benchmark_revenue || 0), 0) : null;
-                const totalChange = totalBenchmark ? ((totalCurrent - totalBenchmark) / totalBenchmark * 100) : null;
-
-                statsEl.innerHTML = `
-                    <div class="stats-bar fade-in">
-                        <div class="stat-card"><div class="stat-label">Periode</div><div class="stat-value">${formatCurrency(totalCurrent)}</div></div>
-                        ${hasBenchmark ? `<div class="stat-card"><div class="stat-label">Benchmark</div><div class="stat-value">${formatCurrency(totalBenchmark)}</div></div>
-                        <div class="stat-card"><div class="stat-label">Ændring</div><div class="stat-value">${changeTag(totalChange, true)}</div></div>` : ''}
-                    </div>`;
-
-                let html = `<div class="table-wrapper fade-in"><table><thead><tr><th>Restaurant</th><th class="num">Periode</th>${hasBenchmark ? '<th class="num">Benchmark</th><th class="num">Ændring</th>' : ''}</tr></thead><tbody>`;
-                for (const r of data) {
-                    html += `<tr><td class="dept-name">${r.department}</td><td class="num">${formatCurrency(r.current_revenue)}</td>${hasBenchmark ? `<td class="num">${formatCurrency(r.benchmark_revenue)}</td><td class="num">${changeTag(r.change_percent, true)}</td>` : ''}</tr>`;
-                }
-                html += `<tr class="summary-row"><td><strong>Total</strong></td><td class="num">${formatCurrency(totalCurrent)}</td>${hasBenchmark ? `<td class="num">${formatCurrency(totalBenchmark)}</td><td class="num">${changeTag(totalChange, true)}</td>` : ''}</tr></tbody></table></div>`;
+                if (!isAdmin && userDepartment !== 'all') data = data.filter(r => r.department === userDepartment);
+                const hb = data.length > 0 && data[0].benchmark_revenue !== undefined;
+                const tc = data.reduce((s,r) => s+(r.current_revenue||0), 0);
+                const tb = hb ? data.reduce((s,r) => s+(r.benchmark_revenue||0), 0) : null;
+                const tch = tb ? ((tc-tb)/tb*100) : null;
+                statsEl.innerHTML = `<div class="stats-bar fade-in"><div class="stat-card"><div class="stat-label">Periode</div><div class="stat-value">${formatCurrency(tc)}</div></div>${hb?`<div class="stat-card"><div class="stat-label">Benchmark</div><div class="stat-value">${formatCurrency(tb)}</div></div><div class="stat-card"><div class="stat-label">Ændring</div><div class="stat-value">${changeTag(tch,true)}</div></div>`:''}</div>`;
+                let html = `<div class="table-wrapper fade-in"><table><thead><tr><th>Restaurant</th><th class="num">Periode</th>${hb?'<th class="num">Benchmark</th><th class="num">Ændring</th>':''}</tr></thead><tbody>`;
+                for (const r of data) html += `<tr><td class="dept-name">${r.department}</td><td class="num">${formatCurrency(r.current_revenue)}</td>${hb?`<td class="num">${formatCurrency(r.benchmark_revenue)}</td><td class="num">${changeTag(r.change_percent,true)}</td>`:''}</tr>`;
+                html += `<tr class="summary-row"><td><strong>Total</strong></td><td class="num">${formatCurrency(tc)}</td>${hb?`<td class="num">${formatCurrency(tb)}</td><td class="num">${changeTag(tch,true)}</td>`:''}</tr></tbody></table></div>`;
                 el.innerHTML = html;
-
             } catch (e) { el.innerHTML = `<div class="error-msg">Fejl: ${e.message}</div>`; }
         }
 
         // ===================== PAX BENCHMARK =====================
-
         async function loadPaxBenchmark() {
             const el = document.getElementById('paxBenchmarkContent');
-            el.innerHTML = '<div class="loading"><div class="spinner"></div>Henter PAX fra Snowflake...</div>';
-
-            const params = new URLSearchParams({
-                start_date: document.getElementById('paxStart').value,
-                end_date: document.getElementById('paxEnd').value,
-                benchmark_start: document.getElementById('paxBenchStart').value,
-                benchmark_end: document.getElementById('paxBenchEnd').value,
-            });
-
+            const statsEl = document.getElementById('paxBenchmarkStats');
+            el.innerHTML = '<div class="loading"><div class="spinner"></div>Henter PAX...</div>'; statsEl.innerHTML = '';
+            const params = new URLSearchParams({ start_date: document.getElementById('paxStart').value, end_date: document.getElementById('paxEnd').value, benchmark_start: document.getElementById('paxBenchStart').value, benchmark_end: document.getElementById('paxBenchEnd').value });
             try {
                 const res = await fetch(`${API}/api/pax/by-department?${params}`);
-                const json = await res.json();
-                if (json.error) throw new Error(json.error);
-
+                const json = await res.json(); if (json.error) throw new Error(json.error);
                 let data = json.data;
-                if (!isAdmin && userDepartment !== 'all') {
-                    data = data.filter(r => r.department === userDepartment);
-                }
-                const hasBenchmark = data.length > 0 && data[0].benchmark_pax !== undefined;
-                const totalCurrent = data.reduce((s, r) => s + (r.current_pax || 0), 0);
-                const totalBenchmark = hasBenchmark ? data.reduce((s, r) => s + (r.benchmark_pax || 0), 0) : null;
-                const totalChange = hasBenchmark ? (totalCurrent - totalBenchmark) : null;
-
-                let html = `
-                    <div class="stats-bar fade-in">
-                        <div class="stat-card"><div class="stat-label">Periode PAX</div><div class="stat-value">${formatNum(totalCurrent)}</div></div>
-                        ${hasBenchmark ? `<div class="stat-card"><div class="stat-label">Benchmark PAX</div><div class="stat-value">${formatNum(totalBenchmark)}</div></div>
-                        <div class="stat-card"><div class="stat-label">Forskel</div><div class="stat-value">${changeTag(totalChange)}</div></div>` : ''}
-                    </div>
-                    <div class="table-wrapper fade-in"><table><thead><tr><th>Restaurant</th><th class="num">Periode</th>${hasBenchmark ? '<th class="num">Benchmark</th><th class="num">Forskel</th>' : ''}</tr></thead><tbody>`;
-
-                for (const r of data) {
-                    html += `<tr><td class="dept-name">${shortDept(r.department)}</td><td class="num">${formatNum(r.current_pax)}</td>${hasBenchmark ? `<td class="num">${formatNum(r.benchmark_pax)}</td><td class="num">${changeTag(r.change)}</td>` : ''}</tr>`;
-                }
-
-                html += `<tr class="summary-row"><td><strong>Total</strong></td><td class="num">${formatNum(totalCurrent)}</td>${hasBenchmark ? `<td class="num">${formatNum(totalBenchmark)}</td><td class="num">${changeTag(totalChange)}</td>` : ''}</tr></tbody></table></div>`;
+                if (!isAdmin && userDepartment !== 'all') data = data.filter(r => r.department === userDepartment);
+                const hb = data.length > 0 && data[0].benchmark_pax !== undefined;
+                const tc = data.reduce((s,r) => s+(r.current_pax||0), 0);
+                const tb = hb ? data.reduce((s,r) => s+(r.benchmark_pax||0), 0) : null;
+                const tch = hb ? (tc-tb) : null;
+                statsEl.innerHTML = `<div class="stats-bar fade-in"><div class="stat-card"><div class="stat-label">Periode PAX</div><div class="stat-value">${formatNum(tc)}</div></div>${hb?`<div class="stat-card"><div class="stat-label">Benchmark PAX</div><div class="stat-value">${formatNum(tb)}</div></div><div class="stat-card"><div class="stat-label">Forskel</div><div class="stat-value">${changeTag(tch)}</div></div>`:''}</div>`;
+                let html = `<div class="table-wrapper fade-in"><table><thead><tr><th>Restaurant</th><th class="num">Periode</th>${hb?'<th class="num">Benchmark</th><th class="num">Forskel</th>':''}</tr></thead><tbody>`;
+                for (const r of data) html += `<tr><td class="dept-name">${shortDept(r.department)}</td><td class="num">${formatNum(r.current_pax)}</td>${hb?`<td class="num">${formatNum(r.benchmark_pax)}</td><td class="num">${changeTag(r.change)}</td>`:''}</tr>`;
+                html += `<tr class="summary-row"><td><strong>Total</strong></td><td class="num">${formatNum(tc)}</td>${hb?`<td class="num">${formatNum(tb)}</td><td class="num">${changeTag(tch)}</td>`:''}</tr></tbody></table></div>`;
                 el.innerHTML = html;
-
             } catch (e) { el.innerHTML = `<div class="error-msg">Fejl: ${e.message}</div>`; }
         }
 
         // ===================== TICKET SIZE =====================
-
         async function loadTicketSize() {
             const el = document.getElementById('ticketSizeContent');
-            el.innerHTML = '<div class="loading"><div class="spinner"></div>Henter omsætning vs. PAX...</div>';
-
-            const startDate = document.getElementById('ticketStart').value;
-            const endDate = document.getElementById('ticketEnd').value;
-            const benchStart = document.getElementById('ticketBenchStart').value;
-            const benchEnd = document.getElementById('ticketBenchEnd').value;
-
+            const statsEl = document.getElementById('ticketSizeStats');
+            el.innerHTML = '<div class="loading"><div class="spinner"></div>Henter omsætning vs. PAX...</div>'; statsEl.innerHTML = '';
+            const sd=document.getElementById('ticketStart').value, ed=document.getElementById('ticketEnd').value, bs=document.getElementById('ticketBenchStart').value, be=document.getElementById('ticketBenchEnd').value;
             try {
-                const revParams = new URLSearchParams({ start_date: startDate, end_date: endDate, benchmark_start: benchStart, benchmark_end: benchEnd });
-                const paxParams = new URLSearchParams({ start_date: startDate, end_date: endDate, benchmark_start: benchStart, benchmark_end: benchEnd });
-
-                const [revRes, paxRes] = await Promise.all([
-                    fetch(`${API}/api/revenue/by-department?${revParams}`),
-                    fetch(`${API}/api/pax/by-department?${paxParams}`),
-                ]);
-
-                const revJson = await revRes.json();
-                const paxJson = await paxRes.json();
-                if (revJson.error) throw new Error(revJson.error);
-                if (paxJson.error) throw new Error(paxJson.error);
-
-                let revData = revJson.data;
-                let paxData = paxJson.data;
-
-                if (!isAdmin && userDepartment !== 'all') {
-                    revData = revData.filter(r => r.department === userDepartment);
-                    paxData = paxData.filter(r => r.department === userDepartment);
-                }
-
-                const revMap = {}, revBenchMap = {}, paxMap = {}, paxBenchMap = {};
-                for (const r of revData) { revMap[r.department] = r.current_revenue || 0; if (r.benchmark_revenue !== undefined) revBenchMap[r.department] = r.benchmark_revenue || 0; }
-                for (const r of paxData) { paxMap[r.department] = r.current_pax || 0; if (r.benchmark_pax !== undefined) paxBenchMap[r.department] = r.benchmark_pax || 0; }
-
-                const hasBenchmark = Object.keys(revBenchMap).length > 0;
-                const allDepts = [...new Set([...Object.keys(revMap), ...Object.keys(paxMap)])].sort();
-
-                let totalRev = 0, totalPax = 0, totalBenchRev = 0, totalBenchPax = 0;
-                let rows = [];
-
-                for (const dept of allDepts) {
-                    const rev = revMap[dept] || 0;
-                    const pax = paxMap[dept] || 0;
-                    const ticket = pax > 0 ? rev / pax : 0;
-                    totalRev += rev; totalPax += pax;
-                    const entry = { dept, ticket };
-                    if (hasBenchmark) {
-                        const benchRev = revBenchMap[dept] || 0;
-                        const benchPax = paxBenchMap[dept] || 0;
-                        const benchTicket = benchPax > 0 ? benchRev / benchPax : 0;
-                        totalBenchRev += benchRev; totalBenchPax += benchPax;
-                        entry.benchTicket = benchTicket;
-                        entry.changePct = benchTicket > 0 ? ((ticket - benchTicket) / benchTicket * 100) : 0;
-                    }
-                    rows.push(entry);
-                }
-
-                const totalTicket = totalPax > 0 ? totalRev / totalPax : 0;
-                const totalBenchTicket = totalBenchPax > 0 ? totalBenchRev / totalBenchPax : 0;
-                const totalChangePct = totalBenchTicket > 0 ? ((totalTicket - totalBenchTicket) / totalBenchTicket * 100) : 0;
-
-                let out = `<div class="stats-bar fade-in">
-                    <div class="stat-card"><div class="stat-label">Oms. pr. PAX</div><div class="stat-value">${totalTicket.toFixed(1)} kr.</div></div>
-                    ${hasBenchmark ? `<div class="stat-card"><div class="stat-label">Benchmark</div><div class="stat-value">${totalBenchTicket.toFixed(1)} kr.</div></div>
-                    <div class="stat-card"><div class="stat-label">Ændring</div><div class="stat-value">${changeTag(totalChangePct, true)}</div></div>` : ''}
-                </div>
-                <div class="table-wrapper fade-in"><table><thead><tr><th>Restaurant</th><th class="num">Oms. pr. PAX</th>${hasBenchmark ? '<th class="num">Benchmark</th><th class="num">Ændring</th>' : ''}</tr></thead><tbody>`;
-
-                for (const r of rows) {
-                    out += `<tr><td class="dept-name">${shortDept(r.dept)}</td><td class="num">${r.ticket.toFixed(1)} kr.</td>${hasBenchmark ? `<td class="num">${r.benchTicket.toFixed(1)} kr.</td><td class="num">${changeTag(r.changePct, true)}</td>` : ''}</tr>`;
-                }
-                out += `<tr class="summary-row"><td><strong>Total</strong></td><td class="num">${totalTicket.toFixed(1)} kr.</td>${hasBenchmark ? `<td class="num">${totalBenchTicket.toFixed(1)} kr.</td><td class="num">${changeTag(totalChangePct, true)}</td>` : ''}</tr></tbody></table></div>`;
-                el.innerHTML = out;
-
+                const rp = new URLSearchParams({start_date:sd,end_date:ed,benchmark_start:bs,benchmark_end:be});
+                const [revRes,paxRes] = await Promise.all([fetch(`${API}/api/revenue/by-department?${rp}`),fetch(`${API}/api/pax/by-department?${rp}`)]);
+                const revJson=await revRes.json(), paxJson=await paxRes.json();
+                if (revJson.error) throw new Error(revJson.error); if (paxJson.error) throw new Error(paxJson.error);
+                let revData=revJson.data, paxData=paxJson.data;
+                if (!isAdmin && userDepartment!=='all') { revData=revData.filter(r=>r.department===userDepartment); paxData=paxData.filter(r=>r.department===userDepartment); }
+                const revMap={},revBM={},paxMap={},paxBM={};
+                for (const r of revData){revMap[r.department]=r.current_revenue||0;if(r.benchmark_revenue!==undefined)revBM[r.department]=r.benchmark_revenue||0;}
+                for (const r of paxData){paxMap[r.department]=r.current_pax||0;if(r.benchmark_pax!==undefined)paxBM[r.department]=r.benchmark_pax||0;}
+                const hb=Object.keys(revBM).length>0, allD=[...new Set([...Object.keys(revMap),...Object.keys(paxMap)])].sort();
+                let tR=0,tP=0,tBR=0,tBP=0,rows=[];
+                for(const d of allD){const rv=revMap[d]||0,px=paxMap[d]||0,tk=px>0?rv/px:0;tR+=rv;tP+=px;const e={dept:d,ticket:tk};if(hb){const br=revBM[d]||0,bp=paxBM[d]||0,bt=bp>0?br/bp:0;tBR+=br;tBP+=bp;e.benchTicket=bt;e.changePct=bt>0?((tk-bt)/bt*100):0;}rows.push(e);}
+                const tTk=tP>0?tR/tP:0,tBTk=tBP>0?tBR/tBP:0,tChP=tBTk>0?((tTk-tBTk)/tBTk*100):0;
+                statsEl.innerHTML = `<div class="stats-bar fade-in"><div class="stat-card"><div class="stat-label">Oms. pr. PAX</div><div class="stat-value">${tTk.toFixed(1)} kr.</div></div>${hb?`<div class="stat-card"><div class="stat-label">Benchmark</div><div class="stat-value">${tBTk.toFixed(1)} kr.</div></div><div class="stat-card"><div class="stat-label">Ændring</div><div class="stat-value">${changeTag(tChP,true)}</div></div>`:''}</div>`;
+                let html=`<div class="table-wrapper fade-in"><table><thead><tr><th>Restaurant</th><th class="num">Oms. pr. PAX</th>${hb?'<th class="num">Benchmark</th><th class="num">Ændring</th>':''}</tr></thead><tbody>`;
+                for(const r of rows) html+=`<tr><td class="dept-name">${shortDept(r.dept)}</td><td class="num">${r.ticket.toFixed(1)} kr.</td>${hb?`<td class="num">${r.benchTicket.toFixed(1)} kr.</td><td class="num">${changeTag(r.changePct,true)}</td>`:''}</tr>`;
+                html+=`<tr class="summary-row"><td><strong>Total</strong></td><td class="num">${tTk.toFixed(1)} kr.</td>${hb?`<td class="num">${tBTk.toFixed(1)} kr.</td><td class="num">${changeTag(tChP,true)}</td>`:''}</tr></tbody></table></div>`;
+                el.innerHTML = html;
             } catch (e) { el.innerHTML = `<div class="error-msg">Fejl: ${e.message}</div>`; }
         }
 
         // ===================== LABOR VS REVENUE =====================
-
         async function loadLaborDaily() {
             const el = document.getElementById('laborDailyContent');
-            el.innerHTML = '<div class="loading"><div class="spinner"></div>Henter løn og omsætning...</div>';
-
-            const params = new URLSearchParams({
-                start_date: document.getElementById('laborStart').value,
-                end_date: document.getElementById('laborEnd').value,
-                department: document.getElementById('laborDept').value,
-            });
-
+            const statsEl = document.getElementById('laborDailyStats');
+            el.innerHTML = '<div class="loading"><div class="spinner"></div>Henter løn og omsætning...</div>'; statsEl.innerHTML = '';
+            const params = new URLSearchParams({ start_date: document.getElementById('laborStart').value, end_date: document.getElementById('laborEnd').value, department: document.getElementById('laborDept').value });
             try {
                 const res = await fetch(`${API}/api/labor-vs-revenue/daily?${params}`);
-                const json = await res.json();
-                if (json.error) throw new Error(json.error);
-
+                const json = await res.json(); if (json.error) throw new Error(json.error);
                 const data = json.data;
-                const weekdays = ['søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag'];
-
+                const weekdays = ['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'];
                 const byDate = {};
-                for (const r of data) {
-                    if (!byDate[r.date]) byDate[r.date] = { revenue: 0, labor: 0 };
-                    byDate[r.date].revenue += r.revenue;
-                    byDate[r.date].labor += r.labor;
-                }
-
-                let totalRevenue = 0, totalLabor = 0;
-
+                for (const r of data) { if (!byDate[r.date]) byDate[r.date] = {revenue:0,labor:0}; byDate[r.date].revenue += r.revenue; byDate[r.date].labor += r.labor; }
+                let tRev=0, tLab=0;
                 let html = `<div class="table-wrapper fade-in"><table><thead><tr><th>Dato</th><th class="num">Omsætning</th><th class="num">Lønomkostning</th><th class="num">Løn %</th></tr></thead><tbody>`;
-
-                const dates = Object.keys(byDate).sort();
-                for (const day of dates) {
-                    const d = byDate[day];
-                    const pct = d.revenue > 0 ? (d.labor / d.revenue * 100) : 0;
-                    totalRevenue += d.revenue; totalLabor += d.labor;
-                    const dateObj = new Date(day + 'T00:00:00');
-                    const weekday = weekdays[dateObj.getDay()];
-                    const dateLabel = weekday.charAt(0).toUpperCase() + weekday.slice(1) + ' ' + dateObj.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
-                    html += `<tr><td>${dateLabel}</td><td class="num">${formatCurrency(d.revenue)}</td><td class="num">${formatCurrency(d.labor)}</td><td class="num">${pct.toFixed(1)}%</td></tr>`;
+                for (const day of Object.keys(byDate).sort()) {
+                    const d=byDate[day], pct=d.revenue>0?(d.labor/d.revenue*100):0; tRev+=d.revenue; tLab+=d.labor;
+                    const dObj=new Date(day+'T00:00:00'), wd=weekdays[dObj.getDay()], lbl=wd.charAt(0).toUpperCase()+wd.slice(1)+' '+dObj.toLocaleDateString('da-DK',{day:'numeric',month:'short'});
+                    html += `<tr><td>${lbl}</td><td class="num">${formatCurrency(d.revenue)}</td><td class="num">${formatCurrency(d.labor)}</td><td class="num">${pct.toFixed(1)}%</td></tr>`;
                 }
-
-                const totalPct = totalRevenue > 0 ? (totalLabor / totalRevenue * 100) : 0;
-                html += `<tr class="summary-row"><td><strong>Total</strong></td><td class="num">${formatCurrency(totalRevenue)}</td><td class="num">${formatCurrency(totalLabor)}</td><td class="num"><strong>${totalPct.toFixed(1)}%</strong></td></tr></tbody></table></div>`;
-
-                const statsHtml = `<div class="stats-bar fade-in">
-                    <div class="stat-card"><div class="stat-label">Omsætning</div><div class="stat-value">${formatCurrency(totalRevenue)}</div></div>
-                    <div class="stat-card"><div class="stat-label">Lønomkostninger</div><div class="stat-value">${formatCurrency(totalLabor)}</div></div>
-                    <div class="stat-card"><div class="stat-label">Lønprocent</div><div class="stat-value">${totalPct.toFixed(1)}%</div></div>
-                </div>`;
-
-                el.innerHTML = statsHtml + html;
-
+                const tPct = tRev>0?(tLab/tRev*100):0;
+                html += `<tr class="summary-row"><td><strong>Total</strong></td><td class="num">${formatCurrency(tRev)}</td><td class="num">${formatCurrency(tLab)}</td><td class="num"><strong>${tPct.toFixed(1)}%</strong></td></tr></tbody></table></div>`;
+                statsEl.innerHTML = `<div class="stats-bar fade-in"><div class="stat-card"><div class="stat-label">Omsætning</div><div class="stat-value">${formatCurrency(tRev)}</div></div><div class="stat-card"><div class="stat-label">Lønomkostninger</div><div class="stat-value">${formatCurrency(tLab)}</div></div><div class="stat-card"><div class="stat-label">Lønprocent</div><div class="stat-value">${tPct.toFixed(1)}%</div></div></div>`;
+                el.innerHTML = html;
             } catch (e) { el.innerHTML = `<div class="error-msg">Fejl: ${e.message}</div>`; }
         }
 
         // ===================== SICKNESS =====================
+        function buildSicknessChart(containerId, currentData, previousData, currentYear) {
+            const maxVal = Math.max(...currentData, ...previousData, 1);
+            const currentMonth = new Date().getMonth(); // 0-indexed
+            const prevYear = parseInt(currentYear) - 1;
+
+            // Y-axis labels
+            const yLabels = [maxVal, maxVal*0.75, maxVal*0.5, maxVal*0.25, 0].map(v => Math.round(v));
+
+            let html = `<div class="chart-wrapper fade-in"><div class="chart-legend">
+                <div class="legend-item"><div class="legend-dot" style="background:#EC6907;"></div> ${currentYear}</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#d4d0cc;"></div> ${prevYear}</div>
+            </div><div class="chart-container"><div class="y-axis">`;
+            for (const l of yLabels) html += `<div class="y-label">${l}</div>`;
+            html += `</div><div class="chart-area">`;
+
+            for (let i = 0; i < 12; i++) {
+                const isFuture = parseInt(currentYear) === new Date().getFullYear() && i > currentMonth;
+                const curH = maxVal > 0 ? (currentData[i]/maxVal)*100 : 0;
+                const prevH = maxVal > 0 ? (previousData[i]/maxVal)*100 : 0;
+                const curOpacity = isFuture ? 'opacity:0.15;' : '';
+                const prevOpacity = isFuture ? 'opacity:0.3;' : '';
+                const futureClass = isFuture ? ' future' : '';
+
+                html += `<div class="chart-month-group"><div class="chart-bars">
+                    <div class="chart-bar previous" style="height:${previousData[i]===0?'2px':Math.max(2,prevH)+'%'};${prevOpacity}"><div class="chart-bar-label">${previousData[i].toFixed(1)}</div></div>
+                    <div class="chart-bar current" style="height:${currentData[i]===0?'2px':Math.max(2,curH)+'%'};${curOpacity}"><div class="chart-bar-label">${currentData[i].toFixed(1)}</div></div>
+                </div><div class="chart-month-label${futureClass}">${MONTH_NAMES[i]}</div></div>`;
+            }
+            html += `</div></div></div>`;
+            document.getElementById(containerId).innerHTML = html;
+        }
 
         async function loadSickness() {
             const el = document.getElementById('sicknessContent');
             const statsEl = document.getElementById('sicknessStats');
+            const chartEl = document.getElementById('sicknessChart');
             el.innerHTML = '<div class="loading"><div class="spinner"></div>Henter sygdomsdata...</div>';
-            statsEl.innerHTML = '';
+            statsEl.innerHTML = ''; chartEl.innerHTML = '';
 
             const year = document.getElementById('sicknessYear').value;
             const dept = document.getElementById('sicknessDept').value;
             const group = document.getElementById('sicknessGroup').value;
+            const prevYear = String(parseInt(year) - 1);
 
             const params = new URLSearchParams({ year });
             if (dept !== 'all') params.append('department', dept);
             if (group !== 'all') params.append('employee_group', group);
 
+            const paramsPrev = new URLSearchParams({ year: prevYear });
+            if (dept !== 'all') paramsPrev.append('department', dept);
+            if (group !== 'all') paramsPrev.append('employee_group', group);
+
             try {
-                const res = await fetch(`${API}/api/sickness/monthly?${params}`);
+                const [res, resPrev] = await Promise.all([
+                    fetch(`${API}/api/sickness/monthly?${params}`),
+                    fetch(`${API}/api/sickness/monthly?${paramsPrev}`)
+                ]);
                 const json = await res.json();
+                const jsonPrev = await resPrev.json();
                 if (json.error) throw new Error(json.error);
 
                 let data = json.data;
+                let dataPrev = jsonPrev.data || [];
 
-                // For non-admin: already filtered by backend or filter here
                 if (!isAdmin && userDepartment !== 'all') {
                     data = data.filter(r => r.department === userDepartment);
+                    dataPrev = dataPrev.filter(r => r.department === userDepartment);
                 }
 
-                const totalHours = data.reduce((s, r) => s + r.total_hours, 0);
-                const totalShifts = data.reduce((s, r) => s + r.total_shifts, 0);
-                const avgPerShift = totalShifts > 0 ? (totalHours / totalShifts) : 0;
+                // Aggregate monthly totals for chart
+                const curMonthly = new Array(12).fill(0);
+                const prevMonthly = new Array(12).fill(0);
+                for (const r of data) { for (let m=1;m<=12;m++) curMonthly[m-1]+=(r.months[String(m)]?.hours||0); }
+                for (const r of dataPrev) { for (let m=1;m<=12;m++) prevMonthly[m-1]+=(r.months[String(m)]?.hours||0); }
+
+                const totalCur = curMonthly.reduce((a,b)=>a+b,0);
+                const totalPrev = prevMonthly.reduce((a,b)=>a+b,0);
+                const totalShifts = data.reduce((s,r)=>s+r.total_shifts,0);
+                const changePct = totalPrev > 0 ? ((totalCur-totalPrev)/totalPrev*100) : 0;
 
                 statsEl.innerHTML = `<div class="stats-bar fade-in">
-                    <div class="stat-card"><div class="stat-label">Sygetimer i alt</div><div class="stat-value">${totalHours.toFixed(1)} t</div></div>
-                    <div class="stat-card"><div class="stat-label">Sygevagter i alt</div><div class="stat-value">${totalShifts}</div></div>
-                    <div class="stat-card"><div class="stat-label">Gns. timer/vagt</div><div class="stat-value">${avgPerShift.toFixed(1)} t</div></div>
+                    <div class="stat-card"><div class="stat-label">Sygetimer ${year}</div><div class="stat-value">${totalCur.toFixed(1)} t</div></div>
+                    <div class="stat-card"><div class="stat-label">Sygetimer ${prevYear}</div><div class="stat-value">${totalPrev.toFixed(1)} t</div></div>
+                    <div class="stat-card"><div class="stat-label">Ændring</div><div class="stat-value">${totalPrev>0?(changePct>0?'+':'')+changePct.toFixed(1)+'%':'—'}</div></div>
                 </div>`;
 
-                // Decide layout: multiple departments = wide table, single = vertical
-                const showMultipleDepts = data.length > 1;
+                // Build chart
+                buildSicknessChart('sicknessChart', curMonthly, prevMonthly, year);
 
-                if (showMultipleDepts) {
-                    // Wide table: depts as rows, months as columns
+                // Build table
+                const showMultiple = data.length > 1;
+                if (showMultiple) {
                     let html = `<div class="table-wrapper fade-in"><table class="wide-table"><thead><tr><th>Afdeling</th>`;
                     for (const m of MONTH_NAMES) html += `<th class="num">${m}</th>`;
                     html += `<th class="num col-total">Total</th></tr></thead><tbody>`;
-
-                    // Monthly totals for summary row
-                    const monthTotals = {};
-                    for (let m = 1; m <= 12; m++) monthTotals[m] = 0;
-
+                    const mTotals = new Array(12).fill(0);
                     for (const row of data) {
                         html += `<tr><td class="dept-name">${shortDept(row.department)}</td>`;
-                        for (let m = 1; m <= 12; m++) {
-                            const h = row.months[String(m)] ? row.months[String(m)].hours : 0;
-                            monthTotals[m] += h;
-                            const cls = h === 0 ? 'sick-zero' : (h >= 40 ? 'sick-high' : '');
-                            html += `<td class="num ${cls}">${h === 0 ? '—' : h.toFixed(1)}</td>`;
+                        for (let m=1;m<=12;m++) {
+                            const h = row.months[String(m)]?.hours||0; mTotals[m-1]+=h;
+                            html += `<td class="num ${h===0?'sick-zero':''}">${h===0?'—':h.toFixed(1)}</td>`;
                         }
                         html += `<td class="num col-total">${row.total_hours.toFixed(1)}</td></tr>`;
                     }
-
-                    // Summary row
                     html += `<tr class="summary-row"><td><strong>Total</strong></td>`;
-                    for (let m = 1; m <= 12; m++) {
-                        html += `<td class="num">${monthTotals[m] === 0 ? '—' : monthTotals[m].toFixed(1)}</td>`;
-                    }
-                    html += `<td class="num col-total">${totalHours.toFixed(1)}</td></tr>`;
-                    html += `</tbody></table></div>`;
+                    for (let m=0;m<12;m++) html += `<td class="num">${mTotals[m]===0?'—':mTotals[m].toFixed(1)}</td>`;
+                    html += `<td class="num col-total">${totalCur.toFixed(1)}</td></tr></tbody></table></div>`;
                     el.innerHTML = html;
-
                 } else {
-                    // Single department: months as rows
-                    const row = data[0] || { months: {}, total_hours: 0, total_shifts: 0 };
-                    let html = `<div class="table-wrapper fade-in"><table><thead><tr><th>Måned</th><th class="num">Sygetimer</th><th class="num">Sygevagter</th></tr></thead><tbody>`;
-                    for (let m = 1; m <= 12; m++) {
-                        const d = row.months[String(m)] || { hours: 0, shifts: 0 };
-                        const cls = d.hours === 0 ? 'sick-zero' : (d.hours >= 40 ? 'sick-high' : '');
-                        html += `<tr><td>${MONTH_NAMES_LONG[m - 1]}</td><td class="num ${cls}">${d.hours === 0 ? '—' : d.hours.toFixed(1)}</td><td class="num ${cls}">${d.shifts === 0 ? '—' : d.shifts}</td></tr>`;
+                    const row = data[0] || {months:{},total_hours:0,total_shifts:0};
+                    const prevRow = dataPrev[0] || {months:{},total_hours:0,total_shifts:0};
+                    let html = `<div class="table-wrapper fade-in"><table><thead><tr><th>Måned</th><th class="num">${year}</th><th class="num">${prevYear}</th><th class="num">Ændring</th></tr></thead><tbody>`;
+                    for (let m=1;m<=12;m++) {
+                        const c = row.months[String(m)]?.hours||0;
+                        const p = prevRow.months[String(m)]?.hours||0;
+                        const isFuture = parseInt(year)===new Date().getFullYear() && m-1 > new Date().getMonth();
+                        let ch = '—';
+                        if (p>0 && !isFuture) { const pct=((c-p)/p*100); ch = (pct>0?'+':'')+pct.toFixed(1)+'%'; }
+                        html += `<tr><td>${MONTH_NAMES_LONG[m-1]}</td><td class="num ${c===0&&isFuture?'sick-zero':''}">${c===0&&isFuture?'—':c.toFixed(1)}</td><td class="num">${p.toFixed(1)}</td><td class="num">${ch}</td></tr>`;
                     }
-                    html += `<tr class="summary-row"><td><strong>Total</strong></td><td class="num">${row.total_hours.toFixed(1)}</td><td class="num">${row.total_shifts}</td></tr></tbody></table></div>`;
+                    const tpct = prevRow.total_hours>0?((row.total_hours-prevRow.total_hours)/prevRow.total_hours*100):0;
+                    html += `<tr class="summary-row"><td><strong>Total</strong></td><td class="num">${row.total_hours.toFixed(1)}</td><td class="num">${prevRow.total_hours.toFixed(1)}</td><td class="num">${prevRow.total_hours>0?(tpct>0?'+':'')+tpct.toFixed(1)+'%':'—'}</td></tr></tbody></table></div>`;
                     el.innerHTML = html;
                 }
-
             } catch (e) { el.innerHTML = `<div class="error-msg">Fejl: ${e.message}</div>`; }
         }
 
         // ===================== INIT =====================
-
         let userDepartment = 'all';
         let isAdmin = true;
 
         async function initDashboard() {
-            // Get user info
             try {
                 const res = await fetch(`${API}/api/dashboard/user-info`);
                 const info = await res.json();
                 userDepartment = info.department_filter;
                 isAdmin = info.is_admin;
-
                 if (!isAdmin) {
-                    // Show department header
-                    const deptHeader = document.getElementById('deptHeader');
-                    deptHeader.textContent = shortDept(userDepartment);
-                    deptHeader.style.display = 'block';
-
+                    const dh = document.getElementById('deptHeader');
+                    dh.textContent = shortDept(userDepartment);
+                    dh.style.display = 'block';
                     document.getElementById('lastUpdate').textContent = shortDept(userDepartment);
-
-                    // Lock labor department selector
-                    const laborDept = document.getElementById('laborDept');
-                    laborDept.value = userDepartment;
-                    laborDept.disabled = true;
-
-                    // Lock sickness department selector
-                    const sicknessDept = document.getElementById('sicknessDept');
-                    sicknessDept.value = userDepartment;
-                    sicknessDept.disabled = true;
+                    document.getElementById('laborDept').value = userDepartment;
+                    document.getElementById('laborDept').disabled = true;
+                    document.getElementById('sicknessDept').value = userDepartment;
+                    document.getElementById('sicknessDept').disabled = true;
                 }
-            } catch (e) {
-                console.log('Could not fetch user info');
-            }
+            } catch (e) { console.log('Could not fetch user info'); }
 
             initDates();
-
-            // Load all sections
             loadPaxToday();
             loadRevenue();
             loadPaxBenchmark();
