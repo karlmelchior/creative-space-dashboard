@@ -508,7 +508,10 @@
 
                 if (json.error) throw new Error(json.error);
 
-                const data = json.data;
+                let data = json.data;
+                if (!isAdmin && userDepartment !== 'all') {
+                    data = data.filter(r => r.department === userDepartment);
+                }
                 const totalPax = data.reduce((s, r) => s + r.pax, 0);
                 const totalBookings = data.reduce((s, r) => s + r.bookings, 0);
 
@@ -593,7 +596,10 @@
 
                 if (json.error) throw new Error(json.error);
 
-                const data = json.data;
+                let data = json.data;
+                if (!isAdmin && userDepartment !== 'all') {
+                    data = data.filter(r => r.department === userDepartment);
+                }
                 const hasBenchmark = data.length > 0 && data[0].benchmark_revenue !== undefined;
 
                 const totalCurrent = data.reduce((s, r) => s + (r.current_revenue || 0), 0);
@@ -684,7 +690,10 @@
 
                 if (json.error) throw new Error(json.error);
 
-                const data = json.data;
+                let data = json.data;
+                if (!isAdmin && userDepartment !== 'all') {
+                    data = data.filter(r => r.department === userDepartment);
+                }
                 const hasBenchmark = data.length > 0 && data[0].benchmark_pax !== undefined;
 
                 const totalCurrent = data.reduce((s, r) => s + (r.current_pax || 0), 0);
@@ -811,14 +820,14 @@
                     const weekday = weekdays[dateObj.getDay()];
                     const dateLabel = weekday.charAt(0).toUpperCase() + weekday.slice(1) + ' ' + dateObj.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
 
-                    const pctClass = pct > 25 ? 'change-negative' : pct > 0 ? 'change-positive' : 'change-zero';
+                    const pctClass = '';
 
                     html += `
                         <tr>
                             <td>${dateLabel}</td>
                             <td class="num">${formatCurrency(d.revenue)}</td>
                             <td class="num">${formatCurrency(d.labor)}</td>
-                            <td class="num"><span class="${pctClass}">${pct.toFixed(1)}%</span></td>
+                            <td class="num">${pct.toFixed(1)}%</td>
                         </tr>
                     `;
                 }
@@ -863,17 +872,43 @@
         }
 
         // Init
+        let userDepartment = 'all';
+        let isAdmin = true;
+
         function initLaborDates() {
             document.getElementById('laborStart').value = mondayThisWeek();
             document.getElementById('laborEnd').value = today();
         }
 
-        initDates();
-        initLaborDates();
-        loadPaxToday();
-        loadRevenue();
-        loadPaxBenchmark();
-        loadLaborDaily();
+        async function initDashboard() {
+            // Get user info
+            try {
+                const res = await fetch(`${API}/api/dashboard/user-info`);
+                const info = await res.json();
+                userDepartment = info.department_filter;
+                isAdmin = info.is_admin;
+
+                // Update header with user info
+                if (!isAdmin) {
+                    document.getElementById('lastUpdate').textContent = shortDept(userDepartment);
+                    // Lock department selector
+                    const laborDept = document.getElementById('laborDept');
+                    laborDept.value = userDepartment;
+                    laborDept.disabled = true;
+                }
+            } catch (e) {
+                console.log('Could not fetch user info');
+            }
+
+            initDates();
+            initLaborDates();
+            loadPaxToday();
+            loadRevenue();
+            loadPaxBenchmark();
+            loadLaborDaily();
+        }
+
+        initDashboard();
     </script>
 </body>
 </html>
