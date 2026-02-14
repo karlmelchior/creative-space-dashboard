@@ -778,6 +778,48 @@ def debug_absence_accounts():
             conn.close()
 
 
+@app.route('/api/debug/shifts-check', methods=['GET'])
+def debug_shifts_check():
+    """Debug: Check Shifts table structure, statuses and sample sick shifts."""
+    conn = None
+    try:
+        conn = get_snowflake_connection('PLANDAY')
+        cursor = conn.cursor()
+
+        # Get columns
+        cursor.execute("SELECT * FROM PLANDAY.PYTHON_IMPORT.SHIFTS LIMIT 1")
+        columns = [desc[0] for desc in cursor.description]
+        row = cursor.fetchone()
+        sample = dict(zip(columns, [str(v) for v in row])) if row else {}
+
+        # Get distinct statuses
+        cursor.execute("""
+            SELECT STATUS, COUNT(*) as cnt
+            FROM PLANDAY.PYTHON_IMPORT.SHIFTS
+            GROUP BY STATUS
+            ORDER BY cnt DESC
+        """)
+        statuses = [{'status': str(r[0]), 'count': r[1]} for r in cursor.fetchall()]
+
+        # Get total count
+        cursor.execute("SELECT COUNT(*) FROM PLANDAY.PYTHON_IMPORT.SHIFTS")
+        total = cursor.fetchone()[0]
+
+        return jsonify({
+            'columns': columns,
+            'total_rows': total,
+            'sample': sample,
+            'statuses': statuses,
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        if conn:
+            conn.close()
+
+
 @app.route('/api/debug/payroll-check', methods=['GET'])
 def debug_payroll_check():
     """Debug: Check Payroll table structure and sample data."""
