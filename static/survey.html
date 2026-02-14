@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hvordan var din oplevelse hos os? — Creative Space</title>
+    <style>
+        @font-face {
+            font-family: 'GT Haptik';
+            src: url('/static/GT-Haptik-alt-Regular.woff2') format('woff2');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'GT Haptik';
+            src: url('/static/GT-Haptik-alt-Bold.woff2') format('woff2');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        :root {
+            --bg: #F9F4EE;
+            --surface: #ffffff;
+            --border: #e8e5e0;
+            --text: #1a1a1a;
+            --text-muted: #777;
+            --accent: #EC6907;
+            --accent-hover: #d45e06;
+            --accent-light: #EC690712;
+            --green: #16a34a;
+            --radius: 12px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'GT Haptik', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .survey-container {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 40px 20px 60px;
+        }
+
+        /* Header */
+        .survey-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .survey-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+
+        .survey-header p {
+            font-size: 15px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* Progress bar */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            margin-bottom: 32px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 2px;
+            transition: width 0.4s ease;
+            width: 0%;
+        }
+
+        .progress-text {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: right;
+            margin-bottom: 8px;
+        }
+
+        /* Question cards */
+        .question-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+            margin-bottom: 20px;
+            transition: box-shadow 0.2s;
+        }
+
+        .question-card:hover {
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        }
+
+        .question-card.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-light);
+        }
+
+        .question-label {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .question-label .required {
+            color: var(--accent);
+            margin-left: 2px;
+        }
+
+        /* Radio/checkbox options */
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .option-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 15px;
+        }
+
+        .option-item:hover {
+            border-color: var(--accent);
+            background: var(--accent-light);
+        }
+
+        .option-item.selected {
+            border-color: var(--accent);
+            background: var(--accent-light);
+        }
+
+        .option-item input[type="radio"] {
+            display: none;
+        }
+
+        .radio-dot {
+            width: 20px;
+            height: 20px;
+            min-width: 20px;
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            transition: all 0.15s;
+            position: relative;
+        }
+
+        .option-item.selected .radio-dot {
+            border-color: var(--accent);
+        }
+
+        .option-item.selected .radio-dot::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 10px;
+            height: 10px;
+            background: var(--accent);
+            border-radius: 50%;
+        }
+
+        /* Rating scale */
+        .rating-scale {
+            display: flex;
+            gap: 8px;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .rating-btn {
+            flex: 1;
+            aspect-ratio: 1;
+            max-width: 64px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface);
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: inherit;
+            color: var(--text);
+        }
+
+        .rating-btn:hover {
+            border-color: var(--accent);
+            background: var(--accent-light);
+        }
+
+        .rating-btn.selected {
+            border-color: var(--accent);
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .rating-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-muted);
+            padding: 0 4px;
+        }
+
+        /* Text input */
+        .text-input {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-family: inherit;
+            font-size: 15px;
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s;
+            resize: vertical;
+            min-height: 44px;
+            background: var(--bg);
+        }
+
+        .text-input:focus {
+            border-color: var(--accent);
+        }
+
+        .text-input::placeholder {
+            color: #bbb;
+        }
+
+        .optional-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 12px;
+            margin-bottom: 6px;
+        }
+
+        /* Email/name fields */
+        .field-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .field-row .field {
+            flex: 1;
+        }
+
+        .field label {
+            font-size: 13px;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        /* Submit */
+        .submit-section {
+            text-align: center;
+            margin-top: 32px;
+        }
+
+        .btn-submit {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 16px 48px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            letter-spacing: 0.01em;
+        }
+
+        .btn-submit:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .consent-text {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 16px;
+            line-height: 1.5;
+        }
+
+        /* Thank you state */
+        .thank-you {
+            text-align: center;
+            padding: 80px 20px;
+            display: none;
+        }
+
+        .thank-you .checkmark {
+            width: 64px;
+            height: 64px;
+            background: var(--green);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .thank-you .checkmark svg {
+            width: 32px;
+            height: 32px;
+            stroke: #fff;
+            stroke-width: 3;
+            fill: none;
+        }
+
+        .thank-you h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .thank-you p {
+            font-size: 15px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        /* Error */
+        .error-shake {
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+
+        .validation-error {
+            color: #dc2626;
+            font-size: 13px;
+            margin-top: 8px;
+            display: none;
+        }
+
+        /* Mobile */
+        @media (max-width: 600px) {
+            .survey-container { padding: 24px 16px 48px; }
+            .question-card { padding: 24px 20px; }
+            .survey-header h1 { font-size: 22px; }
+            .rating-btn { font-size: 15px; max-width: 48px; }
+            .field-row { flex-direction: column; gap: 8px; }
+            .btn-submit { width: 100%; padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="survey-container">
+        <!-- HEADER -->
+        <div class="survey-header">
+            <img src="/static/CS_LOGO_2022.png" alt="Creative Space" style="height: 80px; margin-bottom: 24px;">
+            <h1>Hvordan var din oplevelse hos os?</h1>
+            <p>Vi håber, du vil svare på nogle få spørgsmål, så vi kan gøre et besøg i Creative Space endnu sjovere, hyggeligere og mere kreativt!<br><br>Det tager kun 3 minutter — og hver måned trækker vi lod om et gavekort på 500 kr. blandt alle, der har svaret.</p>
+        </div>
+
+        <!-- PROGRESS -->
+        <div class="progress-text"><span id="progressLabel">0 af 9</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+        <!-- FORM -->
+        <div id="surveyForm">
+
+            <!-- Q1: Butik -->
+            <div class="question-card" data-q="store">
+                <div class="question-label">Hvilken af vores butikker har du besøgt?<span class="required">*</span></div>
+                <div class="options-list" id="q-store">
+                    <label class="option-item" onclick="selectOption(this, 'store', 'Frederiksberg')"><input type="radio" name="store"><span class="radio-dot"></span>Frederiksberg</label>
+                    <label class="option-item" onclick="selectOption(this, 'store', 'Østerbro')"><input type="radio" name="store"><span class="radio-dot"></span>Østerbro</label>
+                    <label class="option-item" onclick="selectOption(this, 'store', 'Lyngby')"><input type="radio" name="store"><span class="radio-dot"></span>Lyngby</label>
+                    <label class="option-item" onclick="selectOption(this, 'store', 'Odense')"><input type="radio" name="store"><span class="radio-dot"></span>Odense</label>
+                    <label class="option-item" onclick="selectOption(this, 'store', 'Aarhus')"><input type="radio" name="store"><span class="radio-dot"></span>Aarhus</label>
+                    <label class="option-item" onclick="selectOption(this, 'store', 'Vejle')"><input type="radio" name="store"><span class="radio-dot"></span>Vejle</label>
+                </div>
+                <div class="validation-error" id="err-store">Vælg venligst en butik</div>
+            </div>
+
+            <!-- Q2: Ugedag -->
+            <div class="question-card" data-q="weekday">
+                <div class="question-label">Hvilken ugedag var du på besøg hos os?<span class="required">*</span></div>
+                <div class="options-list" id="q-weekday">
+                    <label class="option-item" onclick="selectOption(this, 'weekday', 'Mandag')"><input type="radio" name="weekday"><span class="radio-dot"></span>Mandag</label>
+                    <label class="option-item" onclick="selectOption(this, 'weekday', 'Tirsdag')"><input type="radio" name="weekday"><span class="radio-dot"></span>Tirsdag</label>
+                    <label class="option-item" onclick="selectOption(this, 'weekday', 'Onsdag')"><input type="radio" name="weekday"><span class="radio-dot"></span>Onsdag</label>
+                    <label class="option-item" onclick="selectOption(this, 'weekday', 'Torsdag')"><input type="radio" name="weekday"><span class="radio-dot"></span>Torsdag</label>
+                    <label class="option-item" onclick="selectOption(this, 'weekday', 'Fredag')"><input type="radio" name="weekday"><span class="radio-dot"></span>Fredag</label>
+                    <label class="option-item" onclick="selectOption(this, 'weekday', 'Lørdag')"><input type="radio" name="weekday"><span class="radio-dot"></span>Lørdag</label>
+                    <label class="option-item" onclick="selectOption(this, 'weekday', 'Søndag')"><input type="radio" name="weekday"><span class="radio-dot"></span>Søndag</label>
+                </div>
+                <div class="validation-error" id="err-weekday">Vælg venligst en ugedag</div>
+            </div>
+
+            <!-- Q3: Service -->
+            <div class="question-card" data-q="service">
+                <div class="question-label">Hvordan var den service, du fik af personalet?<span class="required">*</span></div>
+                <div class="rating-scale" id="q-service">
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'service', 1)">1</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'service', 2)">2</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'service', 3)">3</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'service', 4)">4</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'service', 5)">5</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'service', 6)">6</button>
+                </div>
+                <div class="rating-labels"><span>Rigtig dårlig</span><span>Rigtig god</span></div>
+                <div class="optional-label">Du er velkommen til at uddybe dit svar her:</div>
+                <textarea class="text-input" id="service_comment" rows="2" placeholder="Valgfrit..."></textarea>
+                <div class="validation-error" id="err-service">Vælg venligst en score</div>
+            </div>
+
+            <!-- Q4: Udvalg -->
+            <div class="question-card" data-q="selection">
+                <div class="question-label">Jeg synes, der var et godt udvalg af keramik og materialer<span class="required">*</span></div>
+                <div class="rating-scale" id="q-selection">
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'selection', 1)">1</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'selection', 2)">2</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'selection', 3)">3</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'selection', 4)">4</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'selection', 5)">5</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'selection', 6)">6</button>
+                </div>
+                <div class="rating-labels"><span>Helt uenig</span><span>Helt enig</span></div>
+                <div class="optional-label">Du er velkommen til at uddybe dit svar her:</div>
+                <textarea class="text-input" id="selection_comment" rows="2" placeholder="Valgfrit..."></textarea>
+                <div class="validation-error" id="err-selection">Vælg venligst en score</div>
+            </div>
+
+            <!-- Q5: Inspiration -->
+            <div class="question-card" data-q="inspiration">
+                <div class="question-label">Jeg fik god inspiration til, hvad jeg skulle male<span class="required">*</span></div>
+                <div class="rating-scale" id="q-inspiration">
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'inspiration', 1)">1</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'inspiration', 2)">2</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'inspiration', 3)">3</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'inspiration', 4)">4</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'inspiration', 5)">5</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'inspiration', 6)">6</button>
+                </div>
+                <div class="rating-labels"><span>Helt uenig</span><span>Helt enig</span></div>
+                <div class="optional-label">Du er velkommen til at uddybe dit svar her:</div>
+                <textarea class="text-input" id="inspiration_comment" rows="2" placeholder="Valgfrit..."></textarea>
+                <div class="validation-error" id="err-inspiration">Vælg venligst en score</div>
+            </div>
+
+            <!-- Q6: Atmosfære -->
+            <div class="question-card" data-q="atmosphere">
+                <div class="question-label">Jeg synes, butikkens indretning gav en god atmosfære<span class="required">*</span></div>
+                <div class="rating-scale" id="q-atmosphere">
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'atmosphere', 1)">1</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'atmosphere', 2)">2</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'atmosphere', 3)">3</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'atmosphere', 4)">4</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'atmosphere', 5)">5</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'atmosphere', 6)">6</button>
+                </div>
+                <div class="rating-labels"><span>Helt uenig</span><span>Helt enig</span></div>
+                <div class="optional-label">Du er velkommen til at uddybe dit svar her:</div>
+                <textarea class="text-input" id="atmosphere_comment" rows="2" placeholder="Valgfrit..."></textarea>
+                <div class="validation-error" id="err-atmosphere">Vælg venligst en score</div>
+            </div>
+
+            <!-- Q7: Anbefaling -->
+            <div class="question-card" data-q="recommend">
+                <div class="question-label">Hvor sandsynligt er det, at du vil anbefale Creative Space til andre?<span class="required">*</span></div>
+                <div class="rating-scale" id="q-recommend">
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'recommend', 1)">1</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'recommend', 2)">2</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'recommend', 3)">3</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'recommend', 4)">4</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'recommend', 5)">5</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this, 'recommend', 6)">6</button>
+                </div>
+                <div class="rating-labels"><span>Vil ikke anbefale</span><span>Vil helt klart anbefale</span></div>
+                <div class="optional-label">Du er velkommen til at uddybe dit svar her:</div>
+                <textarea class="text-input" id="recommend_comment" rows="2" placeholder="Valgfrit..."></textarea>
+                <div class="validation-error" id="err-recommend">Vælg venligst en score</div>
+            </div>
+
+            <!-- Q8: Kommentarer -->
+            <div class="question-card" data-q="comments">
+                <div class="question-label">Hvis du har andre kommentarer eller feedback til os, må du meget gerne dele det med os her:</div>
+                <textarea class="text-input" id="comments" rows="4" placeholder="Valgfrit..."></textarea>
+            </div>
+
+            <!-- Q9: Konkurrence -->
+            <div class="question-card" data-q="contact">
+                <div class="question-label">Konkurrence<span class="required">*</span></div>
+                <p style="font-size:14px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">For at deltage i konkurrencen om et gavekort til Creative Space på <strong>500 kr.</strong> skal vi bede dig indtaste dit navn og e-mail her. Samtidig giver du samtykke til, at vi må holde dig opdateret med nyheder fra vores kreative univers!</p>
+                <div class="field-row">
+                    <div class="field">
+                        <label>Navn</label>
+                        <input type="text" class="text-input" id="contact_name" placeholder="Dit navn">
+                    </div>
+                    <div class="field">
+                        <label>E-mail</label>
+                        <input type="email" class="text-input" id="contact_email" placeholder="Din e-mail">
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUBMIT -->
+            <div class="submit-section">
+                <button type="button" class="btn-submit" id="submitBtn" onclick="submitSurvey()">Send mine svar</button>
+                <div class="consent-text">Dine svar behandles anonymt og bruges kun til at forbedre din oplevelse hos Creative Space.</div>
+            </div>
+        </div>
+
+        <!-- THANK YOU -->
+        <div class="thank-you" id="thankYou">
+            <div class="checkmark">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <h2>Tusind tak for din besvarelse!</h2>
+            <p>Vi sætter stor pris på din feedback. Den hjælper os med at gøre Creative Space endnu bedre.<br><br>Du er nu med i lodtrækningen om et gavekort på 500 kr. 🎉</p>
+        </div>
+    </div>
+
+    <script>
+        const API = 'https://web-production-bf4c.up.railway.app';
+        const answers = {};
+        const requiredFields = ['store', 'weekday', 'service', 'selection', 'inspiration', 'atmosphere', 'recommend'];
+
+        function updateProgress() {
+            let answered = 0;
+            for (const f of requiredFields) {
+                if (answers[f] !== undefined) answered++;
+            }
+            // Also count optional fields if filled
+            if (document.getElementById('comments').value.trim()) answered++;
+            if (document.getElementById('contact_name').value.trim() || document.getElementById('contact_email').value.trim()) answered++;
+            const total = 9;
+            const pct = Math.round((answered / total) * 100);
+            document.getElementById('progressFill').style.width = pct + '%';
+            document.getElementById('progressLabel').textContent = answered + ' af ' + total;
+        }
+
+        function selectOption(el, name, value) {
+            // Deselect siblings
+            const siblings = el.parentElement.querySelectorAll('.option-item');
+            siblings.forEach(s => s.classList.remove('selected'));
+            el.classList.add('selected');
+            el.querySelector('input').checked = true;
+            answers[name] = value;
+
+            // Clear error
+            const err = document.getElementById('err-' + name);
+            if (err) err.style.display = 'none';
+
+            // Remove active border from card
+            el.closest('.question-card').classList.remove('active');
+
+            updateProgress();
+        }
+
+        function selectRating(btn, name, value) {
+            const siblings = btn.parentElement.querySelectorAll('.rating-btn');
+            siblings.forEach(s => s.classList.remove('selected'));
+            btn.classList.add('selected');
+            answers[name] = value;
+
+            const err = document.getElementById('err-' + name);
+            if (err) err.style.display = 'none';
+
+            btn.closest('.question-card').classList.remove('active');
+
+            updateProgress();
+        }
+
+        // Track progress on text fields
+        document.getElementById('comments').addEventListener('input', updateProgress);
+        document.getElementById('contact_name').addEventListener('input', updateProgress);
+        document.getElementById('contact_email').addEventListener('input', updateProgress);
+
+        async function submitSurvey() {
+            // Validate required fields
+            let valid = true;
+            for (const f of requiredFields) {
+                const err = document.getElementById('err-' + f);
+                if (answers[f] === undefined) {
+                    err.style.display = 'block';
+                    if (valid) {
+                        // Scroll to first error
+                        const card = document.querySelector(`[data-q="${f}"]`);
+                        card.classList.add('active', 'error-shake');
+                        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        setTimeout(() => card.classList.remove('error-shake'), 500);
+                    }
+                    valid = false;
+                } else {
+                    err.style.display = 'none';
+                }
+            }
+
+            if (!valid) return;
+
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.textContent = 'Sender...';
+
+            const payload = {
+                store: answers.store,
+                weekday: answers.weekday,
+                service_score: answers.service,
+                service_comment: document.getElementById('service_comment').value.trim(),
+                selection_score: answers.selection,
+                selection_comment: document.getElementById('selection_comment').value.trim(),
+                inspiration_score: answers.inspiration,
+                inspiration_comment: document.getElementById('inspiration_comment').value.trim(),
+                atmosphere_score: answers.atmosphere,
+                atmosphere_comment: document.getElementById('atmosphere_comment').value.trim(),
+                recommend_score: answers.recommend,
+                recommend_comment: document.getElementById('recommend_comment').value.trim(),
+                comments: document.getElementById('comments').value.trim(),
+                contact_name: document.getElementById('contact_name').value.trim(),
+                contact_email: document.getElementById('contact_email').value.trim(),
+            };
+
+            try {
+                const res = await fetch(`${API}/api/survey/submit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+
+                const json = await res.json();
+
+                if (json.error) throw new Error(json.error);
+
+                // Show thank you
+                document.getElementById('surveyForm').style.display = 'none';
+                document.querySelector('.progress-bar').style.display = 'none';
+                document.querySelector('.progress-text').style.display = 'none';
+                document.querySelector('.survey-header').style.display = 'none';
+                document.getElementById('thankYou').style.display = 'block';
+
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            } catch (e) {
+                btn.disabled = false;
+                btn.textContent = 'Send mine svar';
+                alert('Der skete en fejl. Prøv venligst igen.');
+            }
+        }
+    </script>
+</body>
+</html>
