@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import requests as http_requests
 from requests.auth import HTTPBasicAuth
@@ -10,7 +10,7 @@ import json
 from zipfile import ZipFile
 import os
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
 CORS(app)
 
 # =============================================================================
@@ -492,6 +492,16 @@ def labor_by_department():
     finally:
         if conn:
             conn.close()
+
+
+# =============================================================================
+# DASHBOARD
+# =============================================================================
+
+@app.route('/dashboard')
+def dashboard():
+    """Serve the dashboard HTML page."""
+    return send_from_directory('static', 'dashboard.html')
 
 
 # =============================================================================
