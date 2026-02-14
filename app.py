@@ -461,13 +461,13 @@ def labor_by_department():
         query = """
 SELECT 
             CASE b.RESTAURANT_ID
-                WHEN '2070' THEN 'Creative Space Frederiksberg'
-                WHEN '3394' THEN 'Creative Space Lyngby'
-                WHEN '3395' THEN 'Creative Space Odense'
-                WHEN '3396' THEN 'Creative Space Østerbro'
-                WHEN '3398' THEN 'Creative Space Aarhus'
-                WHEN '3714' THEN 'Creative Space Vejle'
-                ELSE 'Unknown (' || b.RESTAURANT_ID || ')'
+               WHEN 2070 THEN 'Creative Space Frederiksberg'
+                WHEN 3394 THEN 'Creative Space Lyngby'
+                WHEN 3395 THEN 'Creative Space Odense'
+                WHEN 3396 THEN 'Creative Space Østerbro'
+                WHEN 3398 THEN 'Creative Space Aarhus'
+                WHEN 3714 THEN 'Creative Space Vejle'
+                ELSE 'Unknown'
             END as department,
             SUM(b.RESTAURANTBOOKING_B_PAX) as total_pax
         FROM DINNERBOOKING.PYTHON_IMPORT.BOOKINGS b
