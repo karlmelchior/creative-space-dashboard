@@ -691,6 +691,36 @@ def labor_vs_revenue_daily():
         if sql_conn:
             sql_conn.close()
 
+@app.route('/api/debug/absence-check', methods=['GET'])
+def debug_absence_check():
+    """Debug: Check Absence table structure and sample data."""
+    conn = None
+    try:
+        conn = get_snowflake_connection('PLANDAY')
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT * FROM PLANDAY.PYTHON_IMPORT.ABSENCE LIMIT 5")
+        columns = [desc[0] for desc in cursor.description]
+        rows = cursor.fetchall()
+        samples = [dict(zip(columns, [str(v) for v in row])) for row in rows]
+
+        cursor.execute("SELECT COUNT(*) FROM PLANDAY.PYTHON_IMPORT.ABSENCE")
+        total = cursor.fetchone()[0]
+
+        return jsonify({
+            'columns': columns,
+            'total_rows': total,
+            'samples': samples,
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        if conn:
+            conn.close()
+
+
 @app.route('/api/debug/payroll-check', methods=['GET'])
 def debug_payroll_check():
     """Debug: Check Payroll table structure and sample data."""
