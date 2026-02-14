@@ -801,6 +801,33 @@ def debug_shifts_check():
         """)
         statuses = [{'status': str(r[0]), 'count': r[1]} for r in cursor.fetchall()]
 
+        # Get distinct shift type IDs
+        cursor.execute("""
+            SELECT SHIFTTYPEID, COUNT(*) as cnt
+            FROM PLANDAY.PYTHON_IMPORT.SHIFTS
+            GROUP BY SHIFTTYPEID
+            ORDER BY cnt DESC
+        """)
+        shift_types = [{'shift_type_id': str(r[0]), 'count': r[1]} for r in cursor.fetchall()]
+
+        # Get distinct employee group IDs
+        cursor.execute("""
+            SELECT EMPLOYEEGROUPID, COUNT(*) as cnt
+            FROM PLANDAY.PYTHON_IMPORT.SHIFTS
+            GROUP BY EMPLOYEEGROUPID
+            ORDER BY cnt DESC
+        """)
+        emp_groups = [{'employee_group_id': str(r[0]), 'count': r[1]} for r in cursor.fetchall()]
+
+        # Get sample shifts with non-null SHIFTTYPEID
+        cursor.execute("""
+            SELECT * FROM PLANDAY.PYTHON_IMPORT.SHIFTS
+            WHERE SHIFTTYPEID IS NOT NULL
+            LIMIT 5
+        """)
+        typed_rows = cursor.fetchall()
+        typed_samples = [dict(zip(columns, [str(v) for v in row])) for row in typed_rows]
+
         # Get total count
         cursor.execute("SELECT COUNT(*) FROM PLANDAY.PYTHON_IMPORT.SHIFTS")
         total = cursor.fetchone()[0]
@@ -810,6 +837,9 @@ def debug_shifts_check():
             'total_rows': total,
             'sample': sample,
             'statuses': statuses,
+            'shift_type_ids': shift_types,
+            'employee_group_ids': emp_groups,
+            'samples_with_shift_type': typed_samples,
         })
 
     except Exception as e:
