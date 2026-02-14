@@ -560,7 +560,7 @@ def debug_payroll_check():
         sample = dict(zip(columns, [str(v) for v in row])) if row else {}
 
         cursor.execute("""
-            SELECT DEPARTMENTID, COUNT(*), SUM(SALARY), SUM(WAGE)
+            SELECT DEPARTMENTID, COUNT(*), SUM(SALARY)
             FROM PLANDAY.PYTHON_IMPORT.PAYROLL
             WHERE CAST(DATE AS DATE) >= '2025-02-08'
               AND CAST(DATE AS DATE) <= '2025-02-16'
@@ -572,7 +572,7 @@ def debug_payroll_check():
         return jsonify({
             'columns': columns,
             'sample_row': sample,
-            'by_department': [{'dept_id': str(r[0]), 'count': r[1], 'sum_salary': float(r[2]) if r[2] else 0, 'sum_wage': float(r[3]) if r[3] else 0} for r in dept_rows],
+            'by_department': [{'dept_id': str(r[0]), 'count': r[1], 'sum_salary': float(r[2]) if r[2] else 0} for r in dept_rows],
         })
 
     except Exception as e:
