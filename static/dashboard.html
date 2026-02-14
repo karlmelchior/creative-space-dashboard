@@ -382,6 +382,17 @@
                 <div class="loading"><div class="spinner"></div>Henter PAX...</div>
             </div>
         </div>
+
+        <!-- LØN VS OMSÆTNING -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-title">Løn vs. omsætning i dag</span>
+                <button class="btn-refresh" onclick="loadLaborToday()">Opdater</button>
+            </div>
+            <div id="laborTodayContent">
+                <div class="loading"><div class="spinner"></div>Henter løn og omsætning...</div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -709,11 +720,117 @@
             }
         }
 
+        // LABOR VS REVENUE TODAY
+        async function loadLaborToday() {
+            const el = document.getElementById('laborTodayContent');
+            el.innerHTML = '<div class="loading"><div class="spinner"></div>Henter løn og omsætning...</div>';
+
+            const tod = today();
+
+            try {
+                const [laborRes, revenueRes] = await Promise.all([
+                    fetch(`${API}/api/labor/by-department?start_date=${tod}&end_date=${tod}`),
+                    fetch(`${API}/api/revenue/by-department?start_date=${tod}&end_date=${tod}`),
+                ]);
+
+                const laborJson = await laborRes.json();
+                const revenueJson = await revenueRes.json();
+
+                if (laborJson.error) throw new Error(laborJson.error);
+                if (revenueJson.error) throw new Error(revenueJson.error);
+
+                // Build maps
+                const laborMap = {};
+                for (const r of laborJson.data) {
+                    laborMap[r.department] = r.current_labor || r.total_labor || 0;
+                }
+                const revenueMap = {};
+                for (const r of revenueJson.data) {
+                    revenueMap[r.department] = r.current_revenue || 0;
+                }
+
+                const allDepts = [...new Set([...Object.keys(laborMap), ...Object.keys(revenueMap)])].sort();
+
+                let totalRevenue = 0;
+                let totalLabor = 0;
+
+                let rows = [];
+                for (const dept of allDepts) {
+                    const rev = revenueMap[dept] || 0;
+                    const lab = laborMap[dept] || 0;
+                    const pct = rev > 0 ? (lab / rev * 100) : 0;
+                    totalRevenue += rev;
+                    totalLabor += lab;
+                    rows.push({ dept, rev, lab, pct });
+                }
+
+                const totalPct = totalRevenue > 0 ? (totalLabor / totalRevenue * 100) : 0;
+
+                let html = `
+                    <div class="stats-bar fade-in">
+                        <div class="stat-card">
+                            <div class="stat-label">Omsætning i dag</div>
+                            <div class="stat-value">${formatCurrency(totalRevenue)}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Lønomkostninger i dag</div>
+                            <div class="stat-value">${formatCurrency(totalLabor)}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Lønprocent</div>
+                            <div class="stat-value">${totalPct.toFixed(1)}%</div>
+                        </div>
+                    </div>
+                    <div class="table-wrapper fade-in">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Restaurant</th>
+                                    <th class="num">Omsætning</th>
+                                    <th class="num">Lønomkostning</th>
+                                    <th class="num">Løn %</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                for (const r of rows) {
+                    const pctClass = r.pct > 25 ? 'change-negative' : r.pct > 0 ? 'change-positive' : 'change-zero';
+                    html += `
+                        <tr>
+                            <td class="dept-name">${shortDept(r.dept)}</td>
+                            <td class="num">${formatCurrency(r.rev)}</td>
+                            <td class="num">${formatCurrency(r.lab)}</td>
+                            <td class="num"><span class="${pctClass}">${r.pct.toFixed(1)}%</span></td>
+                        </tr>
+                    `;
+                }
+
+                html += `
+                        <tr class="summary-row">
+                            <td><strong>Total</strong></td>
+                            <td class="num">${formatCurrency(totalRevenue)}</td>
+                            <td class="num">${formatCurrency(totalLabor)}</td>
+                            <td class="num"><strong>${totalPct.toFixed(1)}%</strong></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                `;
+
+                el.innerHTML = html;
+
+            } catch (e) {
+                el.innerHTML = `<div class="error-msg">Fejl: ${e.message}</div>`;
+            }
+        }
+
         // Init
         initDates();
         loadPaxToday();
         loadRevenue();
         loadPaxBenchmark();
+        loadLaborToday();
     </script>
 </body>
 </html>
