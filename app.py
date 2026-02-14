@@ -729,13 +729,63 @@ def debug_payroll_check():
 
 
 # =============================================================================
-# DASHBOARD
+# DASHBOARD AUTH
 # =============================================================================
 
+from functools import wraps
+
+# Username -> department filter mapping
+# 'admin' sees all, location usernames see only their data
+DASHBOARD_USERS = {
+    'admin': 'all',
+    'frederiksberg': 'Creative Space Frederiksberg',
+    'lyngby': 'Creative Space Lyngby',
+    'odense': 'Creative Space Odense',
+    'østerbro': 'Creative Space Østerbro',
+    'osterbro': 'Creative Space Østerbro',
+    'aarhus': 'Creative Space Aarhus',
+    'vejle': 'Creative Space Vejle',
+}
+
+DASHBOARD_PASSWORD = 'CS2026!'
+
+def check_dashboard_auth(username, password):
+    return username.lower() in DASHBOARD_USERS and password == DASHBOARD_PASSWORD
+
+def requires_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.authorization
+        if not auth or not check_dashboard_auth(auth.username, auth.password):
+            return ('Unauthorized', 401, {'WWW-Authenticate': 'Basic realm="Login Required"'})
+        return f(*args, **kwargs)
+    return decorated
+
+def get_user_department():
+    """Get the department filter for the current user."""
+    auth = request.authorization
+    if auth:
+        return DASHBOARD_USERS.get(auth.username.lower(), 'all')
+    return 'all'
+
+
 @app.route('/dashboard')
+@requires_auth
 def dashboard():
     """Serve the dashboard HTML page."""
     return send_from_directory('static', 'dashboard.html')
+
+
+@app.route('/api/dashboard/user-info')
+@requires_auth
+def dashboard_user_info():
+    """Return the current user's department filter."""
+    dept = get_user_department()
+    return jsonify({
+        'username': request.authorization.username,
+        'department_filter': dept,
+        'is_admin': dept == 'all',
+    })
 
 
 # =============================================================================
