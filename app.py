@@ -692,6 +692,153 @@ def labor_vs_revenue_daily():
             sql_conn.close()
 
 # =============================================================================
+# SURVEY
+# =============================================================================
+
+@app.route('/survey')
+def survey_page():
+    """Serve the customer survey page (no auth required)."""
+    return send_from_directory('static', 'survey.html')
+
+
+@app.route('/api/survey/submit', methods=['POST'])
+def survey_submit():
+    """Save a survey response to Snowflake."""
+    data = request.json
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    required = ['store', 'weekday', 'service_score', 'selection_score',
+                 'inspiration_score', 'atmosphere_score', 'recommend_score']
+    for field in required:
+        if field not in data or data[field] is None:
+            return jsonify({'error': f'Missing required field: {field}'}), 400
+
+    conn = None
+    try:
+        conn = get_snowflake_connection('PLANDAY')
+        cursor = conn.cursor()
+
+        # Create table if not exists
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS PLANDAY.PYTHON_IMPORT.SURVEY_RESPONSES (
+                ID INTEGER AUTOINCREMENT,
+                SUBMITTED_AT TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP(),
+                STORE VARCHAR(100),
+                WEEKDAY VARCHAR(20),
+                SERVICE_SCORE INTEGER,
+                SERVICE_COMMENT VARCHAR(2000),
+                SELECTION_SCORE INTEGER,
+                SELECTION_COMMENT VARCHAR(2000),
+                INSPIRATION_SCORE INTEGER,
+                INSPIRATION_COMMENT VARCHAR(2000),
+                ATMOSPHERE_SCORE INTEGER,
+                ATMOSPHERE_COMMENT VARCHAR(2000),
+                RECOMMEND_SCORE INTEGER,
+                RECOMMEND_COMMENT VARCHAR(2000),
+                COMMENTS VARCHAR(5000),
+                CONTACT_NAME VARCHAR(200),
+                CONTACT_EMAIL VARCHAR(200)
+            )
+        """)
+
+        cursor.execute("""
+            INSERT INTO PLANDAY.PYTHON_IMPORT.SURVEY_RESPONSES
+            (STORE, WEEKDAY, SERVICE_SCORE, SERVICE_COMMENT,
+             SELECTION_SCORE, SELECTION_COMMENT,
+             INSPIRATION_SCORE, INSPIRATION_COMMENT,
+             ATMOSPHERE_SCORE, ATMOSPHERE_COMMENT,
+             RECOMMEND_SCORE, RECOMMEND_COMMENT,
+             COMMENTS, CONTACT_NAME, CONTACT_EMAIL)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            data.get('store'),
+            data.get('weekday'),
+            int(data.get('service_score')),
+            data.get('service_comment', ''),
+            int(data.get('selection_score')),
+            data.get('selection_comment', ''),
+            int(data.get('inspiration_score')),
+            data.get('inspiration_comment', ''),
+            int(data.get('atmosphere_score')),
+            data.get('atmosphere_comment', ''),
+            int(data.get('recommend_score')),
+            data.get('recommend_comment', ''),
+            data.get('comments', ''),
+            data.get('contact_name', ''),
+            data.get('contact_email', ''),
+        ))
+
+        return jsonify({'success': True, 'message': 'Tak for din besvarelse!'})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        if conn:
+            conn.close()
+
+
+@app.route('/api/survey/results', methods=['GET'])
+def survey_results():
+    """
+    Get survey results aggregated by store.
+    Query params: start_date, end_date (optional)
+    """
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+
+    query = """
+        SELECT
+            STORE,
+            COUNT(*) as response_count,
+            ROUND(AVG(SERVICE_SCORE), 2) as avg_service,
+            ROUND(AVG(SELECTION_SCORE), 2) as avg_selection,
+            ROUND(AVG(INSPIRATION_SCORE), 2) as avg_inspiration,
+            ROUND(AVG(ATMOSPHERE_SCORE), 2) as avg_atmosphere,
+            ROUND(AVG(RECOMMEND_SCORE), 2) as avg_recommend,
+            ROUND(AVG(SERVICE_SCORE + SELECTION_SCORE + INSPIRATION_SCORE + ATMOSPHERE_SCORE + RECOMMEND_SCORE) / 5.0, 2) as avg_overall
+        FROM PLANDAY.PYTHON_IMPORT.SURVEY_RESPONSES
+        WHERE 1=1
+    """
+    params = []
+
+    if start_date:
+        query += " AND SUBMITTED_AT >= %s"
+        params.append(start_date)
+    if end_date:
+        query += " AND SUBMITTED_AT <= %s"
+        params.append(end_date + ' 23:59:59')
+
+    query += " GROUP BY STORE ORDER BY STORE"
+
+    conn = None
+    try:
+        conn = get_snowflake_connection('PLANDAY')
+        cursor = conn.cursor()
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+        columns = [desc[0].lower() for desc in cursor.description]
+
+        results = [dict(zip(columns, row)) for row in rows]
+
+        # Convert Decimal to float
+        for r in results:
+            for k, v in r.items():
+                if hasattr(v, '__float__'):
+                    r[k] = float(v)
+
+        return jsonify({'data': results})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        if conn:
+            conn.close()
+
+
+# =============================================================================
 # ENDPOINT 6: SICKNESS HOURS MONTHLY (Snowflake SHIFTS)
 # =============================================================================
 
@@ -794,6 +941,21 @@ def sickness_monthly():
     finally:
         if conn:
             conn.close()
+
+
+@app.route('/api/debug/survey-list', methods=['GET'])
+def debug_survey_list():
+    """Debug: List surveys from SurveyMonkey."""
+    try:
+        url = "https://api.eu.surveymonkey.com/v3/surveys"
+        headers = {
+            'Authorization': 'Bearer Ar8Dd77Wyesk359If50.y0KNY9k74D72WuvnvoFh.FunkE7Xesoc7I639ruAthWVP.WRrhgGQoTXHzWSAqQI8t7rFFQZD8kqxvwKjigiBRsr2Ipb73ksMiUs35n8as6f',
+            'Content-Type': 'application/json'
+        }
+        res = http_requests.get(url, headers=headers)
+        return jsonify(res.json())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/debug/absence-check', methods=['GET'])
