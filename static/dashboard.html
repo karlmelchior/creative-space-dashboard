@@ -332,10 +332,10 @@
         .legend-item { display: flex; align-items: center; gap: 6px; }
         .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
         .chart-container { display: flex; gap: 8px; }
-        .y-axis { display: flex; flex-direction: column; justify-content: space-between; height: 200px; }
+        .y-axis { display: flex; flex-direction: column; justify-content: space-between; height: 280px; }
         .y-label { font-size: 10px; color: var(--text-muted); text-align: right; min-width: 28px; }
         .chart-area {
-            display: flex; align-items: flex-end; gap: 6px; height: 200px;
+            display: flex; align-items: flex-end; gap: 6px; height: 280px;
             border-bottom: 1px solid var(--border); position: relative; flex: 1;
         }
         .chart-area::before {
@@ -881,9 +881,13 @@
                 const prevOpacity = isFuture ? 'opacity:0.3;' : '';
                 const futureClass = isFuture ? ' future' : '';
 
+                // Minimum 6px for non-zero values so bars are always visible
+                const prevStyle = previousData[i]===0 ? 'height:2px;' : `height:${Math.max(3,prevH)}%;min-height:6px;`;
+                const curStyle = currentData[i]===0 ? 'height:2px;' : `height:${Math.max(3,curH)}%;min-height:6px;`;
+
                 html += `<div class="chart-month-group"><div class="chart-bars">
-                    <div class="chart-bar previous" style="height:${previousData[i]===0?'2px':Math.max(2,prevH)+'%'};${prevOpacity}"><div class="chart-bar-label">${previousData[i].toFixed(1)}</div></div>
-                    <div class="chart-bar current" style="height:${currentData[i]===0?'2px':Math.max(2,curH)+'%'};${curOpacity}"><div class="chart-bar-label">${currentData[i].toFixed(1)}</div></div>
+                    <div class="chart-bar previous" style="${prevStyle}${prevOpacity}"><div class="chart-bar-label">${previousData[i].toFixed(1)}</div></div>
+                    <div class="chart-bar current" style="${curStyle}${curOpacity}"><div class="chart-bar-label">${currentData[i].toFixed(1)}</div></div>
                 </div><div class="chart-month-label${futureClass}">${MONTH_NAMES[i]}</div></div>`;
             }
             html += `</div></div></div>`;
