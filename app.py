@@ -721,6 +721,73 @@ def debug_absence_check():
             conn.close()
 
 
+@app.route('/api/debug/employees-check', methods=['GET'])
+def debug_employees_check():
+    """Debug: Check Employees table structure and sample data."""
+    conn = None
+    try:
+        conn = get_snowflake_connection('PLANDAY')
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT * FROM PLANDAY.PYTHON_IMPORT.EMPLOYEES LIMIT 3")
+        columns = [desc[0] for desc in cursor.description]
+        rows = cursor.fetchall()
+        samples = [dict(zip(columns, [str(v) for v in row])) for row in rows]
+
+        cursor.execute("SELECT COUNT(*) FROM PLANDAY.PYTHON_IMPORT.EMPLOYEES")
+        total = cursor.fetchone()[0]
+
+        # Check distinct departments
+        cursor.execute("""
+            SELECT DISTINCT DEPARTMENTID 
+            FROM PLANDAY.PYTHON_IMPORT.EMPLOYEES 
+            WHERE DEPARTMENTID IS NOT NULL
+            ORDER BY DEPARTMENTID
+        """)
+        dept_ids = [str(r[0]) for r in cursor.fetchall()]
+
+        return jsonify({
+            'columns': columns,
+            'total_rows': total,
+            'samples': samples,
+            'distinct_department_ids': dept_ids,
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        if conn:
+            conn.close()
+
+
+@app.route('/api/debug/absence-accounts', methods=['GET'])
+def debug_absence_accounts():
+    """Debug: Check distinct absence account IDs to identify sickness vs holiday."""
+    conn = None
+    try:
+        conn = get_snowflake_connection('PLANDAY')
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT REGISTRATIONS_ACCOUNT_ID, COUNT(*) as cnt
+            FROM PLANDAY.PYTHON_IMPORT.ABSENCE
+            GROUP BY REGISTRATIONS_ACCOUNT_ID
+            ORDER BY cnt DESC
+        """)
+        rows = cursor.fetchall()
+        accounts = [{'account_id': str(r[0]), 'count': r[1]} for r in rows]
+
+        return jsonify({'absence_accounts': accounts})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        if conn:
+            conn.close()
+
+
 @app.route('/api/debug/payroll-check', methods=['GET'])
 def debug_payroll_check():
     """Debug: Check Payroll table structure and sample data."""
