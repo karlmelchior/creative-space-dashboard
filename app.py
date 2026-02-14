@@ -737,20 +737,10 @@ def debug_employees_check():
         cursor.execute("SELECT COUNT(*) FROM PLANDAY.PYTHON_IMPORT.EMPLOYEES")
         total = cursor.fetchone()[0]
 
-        # Check distinct departments
-        cursor.execute("""
-            SELECT DISTINCT DEPARTMENTID 
-            FROM PLANDAY.PYTHON_IMPORT.EMPLOYEES 
-            WHERE DEPARTMENTID IS NOT NULL
-            ORDER BY DEPARTMENTID
-        """)
-        dept_ids = [str(r[0]) for r in cursor.fetchall()]
-
         return jsonify({
             'columns': columns,
             'total_rows': total,
             'samples': samples,
-            'distinct_department_ids': dept_ids,
         })
 
     except Exception as e:
