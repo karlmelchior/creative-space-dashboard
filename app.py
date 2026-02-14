@@ -691,6 +691,111 @@ def labor_vs_revenue_daily():
         if sql_conn:
             sql_conn.close()
 
+# =============================================================================
+# ENDPOINT 6: SICKNESS HOURS MONTHLY (Snowflake SHIFTS)
+# =============================================================================
+
+@app.route('/api/sickness/monthly', methods=['GET'])
+def sickness_monthly():
+    """
+    Get monthly sickness hours per department.
+    
+    Query params:
+        year: Year to show (default: current year)
+        department: Filter by department name (default: all)
+        employee_group: Filter by employee group ID (default: all)
+    """
+    year = request.args.get('year', str(datetime.now().year))
+    department_filter = request.args.get('department', 'all')
+    employee_group_filter = request.args.get('employee_group', 'all')
+
+    # Sick shift type IDs
+    sick_type_ids = [610101, 610102, 610106]
+
+    query = """
+        SELECT 
+            CASE DEPARTMENTID
+                WHEN 162164 THEN 'Creative Space Frederiksberg'
+                WHEN 164684 THEN 'Creative Space Lyngby'
+                WHEN 162209 THEN 'Creative Space Odense'
+                WHEN 162162 THEN 'Creative Space Østerbro'
+                WHEN 162208 THEN 'Creative Space Aarhus'
+                WHEN 164717 THEN 'Creative Space Vejle'
+                ELSE 'Unknown'
+            END as department,
+            EXTRACT(MONTH FROM TO_DATE(DATE)) as month,
+            SUM(TIMESTAMPDIFF('MINUTE', TO_TIMESTAMP(STARTDATETIME), TO_TIMESTAMP(ENDDATETIME)) / 60.0) as sick_hours,
+            COUNT(*) as sick_shifts
+        FROM PLANDAY.PYTHON_IMPORT.SHIFTS
+        WHERE SHIFTTYPEID IN (610101, 610102, 610106)
+          AND EXTRACT(YEAR FROM TO_DATE(DATE)) = %s
+          AND DEPARTMENTID IN (162164, 164684, 162209, 162162, 162208, 164717)
+          AND STATUS IN ('Approved', 'Assigned')
+    """
+
+    params = [year]
+
+    if employee_group_filter != 'all':
+        query += " AND EMPLOYEEGROUPID = %s"
+        params.append(int(employee_group_filter))
+
+    query += """
+        GROUP BY department, month
+        ORDER BY department, month
+    """
+
+    conn = None
+    try:
+        conn = get_snowflake_connection('PLANDAY')
+        cursor = conn.cursor()
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+
+        # Build result: {department: {month: {hours, shifts}}}
+        dept_data = {}
+        for row in rows:
+            dept = row[0]
+            month = int(row[1])
+            hours = round(float(row[2]), 1) if row[2] else 0
+            shifts = int(row[3]) if row[3] else 0
+
+            if department_filter != 'all' and dept != department_filter:
+                continue
+
+            if dept not in dept_data:
+                dept_data[dept] = {}
+            dept_data[dept][month] = {'hours': hours, 'shifts': shifts}
+
+        # Format as array
+        results = []
+        for dept in sorted(dept_data.keys()):
+            row = {'department': dept, 'months': {}}
+            total_hours = 0
+            total_shifts = 0
+            for m in range(1, 13):
+                data = dept_data[dept].get(m, {'hours': 0, 'shifts': 0})
+                row['months'][str(m)] = data
+                total_hours += data['hours']
+                total_shifts += data['shifts']
+            row['total_hours'] = round(total_hours, 1)
+            row['total_shifts'] = total_shifts
+            results.append(row)
+
+        return jsonify({
+            'data': results,
+            'year': year,
+            'department_filter': department_filter,
+            'employee_group_filter': employee_group_filter,
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        if conn:
+            conn.close()
+
+
 @app.route('/api/debug/absence-check', methods=['GET'])
 def debug_absence_check():
     """Debug: Check Absence table structure and sample data."""
